@@ -19,6 +19,7 @@ ehthumbs.db
 /front-evaluation/vite/.turbo/
 /front-evaluation/vite/.cache/
 /front-evaluation/vite/.eslintcache
+/front-evaluation/vite/yarn.lock
 
 # --- Visual Studio & .NET (BACKEND) ---
 

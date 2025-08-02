@@ -13,11 +13,14 @@ namespace UserService.Controllers
     public class UserController : ControllerBase
     {
         private readonly AppdbContext _context;
+        private static readonly string username = "st154";
+        private static readonly string password = "Carasco@20";
 
         public UserController(AppdbContext context)
         {
             _context = context;
         }
+        
 
 
         [HttpPost("populate")]
@@ -75,7 +78,7 @@ namespace UserService.Controllers
             List<UserAD> users = new List<UserAD>();
             string domainPath = "LDAP://corp.ravinala";
 
-            using (DirectoryEntry directoryEntry = new DirectoryEntry(domainPath))
+            using (DirectoryEntry directoryEntry = new DirectoryEntry(domainPath, username, password))
             {
                 using (DirectorySearcher searcher = new DirectorySearcher(directoryEntry))
                 {
@@ -170,7 +173,7 @@ namespace UserService.Controllers
             string managerDn = null;
             UserAD manager = null;
 
-            using (DirectoryEntry directoryEntry = new DirectoryEntry(domainPath))
+            using (DirectoryEntry directoryEntry = new DirectoryEntry(domainPath, username, password))
             {
                 using (DirectorySearcher searcher = new DirectorySearcher(directoryEntry))
                 {
@@ -201,7 +204,7 @@ namespace UserService.Controllers
 
             if (!string.IsNullOrEmpty(managerDn))
             {
-                using (DirectoryEntry directoryEntry = new DirectoryEntry(domainPath))
+                using (DirectoryEntry directoryEntry = new DirectoryEntry(domainPath, username, password))
                 {
                     using (DirectorySearcher searcher = new DirectorySearcher(directoryEntry))
                     {
