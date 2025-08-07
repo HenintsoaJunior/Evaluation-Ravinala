@@ -196,94 +196,94 @@ namespace EvaluationService.Controllers
 
         //     return Ok(result);
         // }
+
         [HttpGet("getEvaluationFinaleScores/{year}")]
         public async Task<IActionResult> GetEvaluationFinaleScores(int year)
         {
-            // 1) Récupération et calcul des scores directement avec EF
-            var scoresRaw = await (
-                from hcfi in _context.HistoryCFis
-                join ue in _context.UserEvaluations on hcfi.UserEvalId equals ue.UserEvalId
-                join e in _context.Evaluations on ue.EvalId equals e.EvalId
-                where e.EvalAnnee == year && e.Type == "Cadre"
-                group new { hcfi, ue } by new { ue.UserId, ue.UserEvalId } into g
-                select new
+            // 1) Calcul des scores par user
+            var evaluationFinaleScores = _context.HistoryCFis
+                .Join(
+                    _context.UserEvaluations,
+                    hcfi => hcfi.UserEvalId,
+                    ue => ue.UserEvalId,
+                    (hcfi, ue) => new { hcfi, ue }
+                )
+                .Join(
+                    _context.Evaluations,
+                    combined => combined.ue.EvalId,
+                    e => e.EvalId,
+                    (combined, e) => new { combined.hcfi, combined.ue, e }
+                )
+                .Where(result =>
+                    result.e.EvalAnnee == year &&
+                    result.e.Type == "Cadre"
+                )
+                .GroupBy(result => new { result.ue.UserId, result.ue.UserEvalId })
+                .Select(group => new
                 {
-                    g.Key.UserId,
-                    g.Key.UserEvalId,
+                    UserId = group.Key.UserId,
+                    UserEvalId = group.Key.UserEvalId,
                     Score = Math.Truncate(
-                        g.Sum(x => (x.hcfi.Weighting * x.hcfi.Result) / 100) * 100
+                        group.Sum(item => (item.hcfi.Weighting * item.hcfi.Result) / 100)
+                        * 100
                     ) / 100
-                }
-            ).ToListAsync();
-
-            if (!scoresRaw.Any())
-                return NotFound(new { message = "Aucun score trouvé pour cette année." });
-
-            // 2) Appel unique pour récupérer tous les users depuis le UserService
-            var userServiceClient = _httpClientFactory.CreateClient("UserService");
-            var usersResponse = await userServiceClient.GetAsync("api/User/user");
-
-            if (!usersResponse.IsSuccessStatusCode)
-                return StatusCode((int)usersResponse.StatusCode, "Erreur de communication avec UserService.");
-
-            var allUsers = await usersResponse.Content.ReadFromJsonAsync<List<UserDTO>>();
-            if (allUsers == null)
-                return StatusCode(500, "Impossible de lire les utilisateurs du service externe.");
-
-            // 3) Préparation d’un dictionnaire pour accès rapide
-            var userDict = allUsers.ToDictionary(u => u.Id, u => u);
-
-            // 4) Récupération des UserObjectives pour les UserEvalIds concernés
-            var userEvalIds = scoresRaw.Select(s => s.UserEvalId).ToList();
-
-            var allObjectives = await _context.UserObjectives
-                .Where(o => userEvalIds.Contains(o.UserEvalId))
-                .Select(o => new
-                {
-                    o.UserEvalId,
-                    o.Description,
-                    o.Weighting,
-                    o.Result,
-                    o.ResultIndicator
                 })
-                .ToListAsync();
-
-            // 5) Groupement des objectifs pour éviter les Where linéaires
-            var objectivesByEvalId = allObjectives
-                .GroupBy(o => o.UserEvalId)
-                .ToDictionary(g => g.Key, g => g.ToList());
-
-            // 6) Assemblage final en mémoire (rapide grâce aux dictionnaires)
-            var finalResult = scoresRaw
-                .Where(s => userDict.ContainsKey(s.UserId))
-                .Select(s =>
-                {
-                    var user = userDict[s.UserId];
-                    objectivesByEvalId.TryGetValue(s.UserEvalId, out var userObjectives);
-                    return new
-                    {
-                        UserId = user.Id,
-                        UserEvalId = s.UserEvalId,
-                        Matricule = user.Matricule,
-                        Name = user.Name,
-                        Email = user.Email,
-                        Department = user.Department,
-                        Score = s.Score,
-                        Objectives = userObjectives?.Select(o => new
-                        {
-                            o.Description,
-                            o.Weighting,
-                            o.Result,
-                            o.ResultIndicator
-                        }).ToList()
-                    };
-                })
-                .OrderByDescending(x => x.Score)
                 .ToList();
 
-            return Ok(finalResult);
-        }
+            if (!evaluationFinaleScores.Any())
+                return NotFound(new { message = "Aucun score trouvé pour cette année." });
 
+            // 2) Récupération des Users via UserService
+            var userServiceClient = _httpClientFactory.CreateClient("UserService");
+            var usersResponse = await userServiceClient.GetAsync("api/User/user");
+            usersResponse.EnsureSuccessStatusCode();
+            var allUsers = await usersResponse.Content.ReadFromJsonAsync<List<UserDTO>>();
+
+            if (allUsers == null)
+                return StatusCode(500, "Impossible de lire la liste des utilisateurs du service UserService.");
+
+            // 3) Récupération des UserObjectives pour les UserEvalId concernés
+            var userEvalIds = evaluationFinaleScores.Select(s => s.UserEvalId).ToList();
+            var userObjectives = _context.UserObjectives
+                .Where(obj => userEvalIds.Contains(obj.UserEvalId))
+                .Select(obj => new
+                {
+                    obj.UserEvalId,
+                    obj.Description,
+                    obj.Weighting,
+                    obj.Result,
+                    obj.ResultIndicator
+                })
+                .ToList();
+
+            // 4) Jointure finale : scores + user info + objectifs
+            var result = (from score in evaluationFinaleScores
+                        join usr in allUsers on score.UserId equals usr.Id
+                        select new
+                        {
+                            UserId = usr.Id,
+                            UserEvalId=score.UserEvalId,
+                            Matricule = usr.Matricule,
+                            Name = usr.Name,
+                            Email = usr.Email,
+                            Department = usr.Department,
+                            Score = score.Score,
+                            Objectives = userObjectives
+                                .Where(o => o.UserEvalId == score.UserEvalId)
+                                .Select(o => new
+                                {
+                                    o.Description,
+                                    o.Weighting,
+                                    o.Result,
+                                    o.ResultIndicator
+                                })
+                                .ToList()
+                        })
+                        .OrderByDescending(x => x.Score)
+                        .ToList();
+
+            return Ok(result);
+        }
 
 
         // -------------------------------------------------------------------------------------------------------------------------
