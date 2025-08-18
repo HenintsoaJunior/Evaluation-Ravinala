@@ -752,15 +752,15 @@ namespace EvaluationService.Controllers
                     ue => ue.EvalId,
                     (e, ue) => new { e, ue }
                 )
-                // Filtre sur l'année, + éventuellement e.Type == "NonCadre"
-                .Where(x => x.e.EvalAnnee == year /* && x.e.Type == "NonCadre" */)
+                .Where(x => x.e.EvalAnnee == year && x.e.Type == "NonCadre")
                 .Select(x => new
                 {
                     x.e.EvalId,
                     x.e.EvalAnnee,
                     x.e.CompetenceWeightTotal,
                     x.e.IndicatorWeightTotal,
-                    UserId = x.ue.UserId
+                    UserId = x.ue.UserId,
+                    UserEvalId = x.ue.UserEvalId
                 })
                 .ToList();
 
@@ -770,7 +770,7 @@ namespace EvaluationService.Controllers
             }
 
             // 2) Calculer le score pour chaque (user, EvalId)
-            var scoresList = new List<(string UserId, int Year, decimal Score)>();
+            var scoresList = new List<(string UserId, int UserEvalId, int Year, decimal Score)>();
 
             var groupedByUser = allEvalData.GroupBy(e => e.UserId);
 
@@ -822,14 +822,13 @@ namespace EvaluationService.Controllers
                     }
                     else
                     {
-                        // Si pas d'indicateur => on prend seulement la partie compétences
                         finalScore = Math.Round(
                             competenceAvg * competenceWeightTotal / 100,
                             2
                         );
                     }
 
-                    scoresList.Add((evaluation.UserId, evaluation.EvalAnnee, finalScore));
+                    scoresList.Add((evaluation.UserId, evaluation.UserEvalId, evaluation.EvalAnnee, finalScore));
                 }
             }
 
@@ -859,21 +858,56 @@ namespace EvaluationService.Controllers
                 );
             }
 
-            // 4) Jointure en mémoire : associer UserId + Score avec les détails et trier par Score décroissant
+            // 4) Récupération optimisée des objectifs via une seule requête JOIN
+            var userEvalIds = scoresList.Select(s => s.UserEvalId).ToList();
+
+            var objectivesByUserEval = _context.HistoryCFis
+                .Where(h => userEvalIds.Contains(h.UserEvalId))
+                .Join(
+                    _context.HistoryObjectiveColumnValuesFis,
+                    h => h.HcfiId,
+                    hocv => hocv.HcfiId,
+                    (h, hocv) => new
+                    {
+                        h.UserEvalId,
+                        hocv.ColumnName,
+                        hocv.Value,
+                        hocv.ValidatedBy,
+                        hocv.CreatedAt
+                    }
+                )
+                .GroupBy(x => x.UserEvalId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.GroupBy(x => x.ColumnName)
+                        .Select(columnGroup => new ObjectiveColumnDto
+                        {
+                            ColumnName = columnGroup.Key,
+                            Values = columnGroup.Select(x => new ObjectiveValueDto
+                            {
+                                Value = x.Value,
+                                ValidatedBy = x.ValidatedBy,
+                                CreatedAt = x.CreatedAt
+                            }).ToList()
+                        }).ToList()
+                );
+
+            // 5) Jointure en mémoire : associer UserId + Score + Objectives avec les détails et trier par Score décroissant
             var finalResult = from scoreItem in scoresList
                               join usr in allUsers on scoreItem.UserId equals usr.Id
-                              // On filtre ici pour ne renvoyer que ceux qui ont un score > 0
                               where scoreItem.Score > 0
-                              orderby scoreItem.Score descending // Ajout de l'ordre décroissant
+                              orderby scoreItem.Score descending
                               select new
                               {
                                   UserId = usr.Id,
+                                  UserEvalId = scoreItem.UserEvalId,
                                   Matricule = usr.Matricule,
                                   usr.Name,
                                   usr.Email,
                                   usr.Department,
                                   Year = scoreItem.Year,
-                                  Score = scoreItem.Score
+                                  Score = scoreItem.Score,
+                                  Objectives = objectivesByUserEval.GetValueOrDefault(scoreItem.UserEvalId) ?? new List<ObjectiveColumnDto>()
                               };
 
             return Ok(finalResult);
