@@ -377,7 +377,7 @@ cd EvaluationService
 dotnet run
 
 # 3. Démarrer Frontend
-cd frontend
+cd front-evaluation
 npm install
 npm start
 ```
@@ -458,7 +458,18 @@ npm test
 - Logs applicatifs pour le debugging
 - Tests unitaires pour la validation
 
+### BUILD
+cd UserService
+dotnet publish -c Release -o ./publish
+recuperer le e contenue du dossier publish pour le build
+
+cd EvaluationService
+dotnet publish -c Release -o ./publish
+recuperer le e contenue du dossier publish pour le build
 ```
+cd front-evaluation
+npm run build 
+recuperer le contenue du dossier dist pour le build
 
 Ce README complet couvre l'ensemble de l'architecture microservices avec tous les composants : UserService, EvaluationService et Frontend, facilitant la compréhension et la maintenance pour les futurs développeurs.
 ```

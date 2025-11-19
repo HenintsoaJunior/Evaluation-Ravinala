@@ -57,6 +57,8 @@ CREATE  TABLE Indicators (
  );
 GO
 
+
+
 CREATE NONCLUSTERED INDEX IX_Indicators_TemplateId ON Indicators ( TemplateId  asc );
 GO
 
@@ -1500,3 +1502,8 @@ INSERT INTO HistoryCMps( HcmId, UserEvalId, PriorityName, Description, Weighting
 INSERT INTO HistoryCMps( HcmId, UserEvalId, PriorityName, Description, Weighting, ResultIndicator, Result, ValidatedBy, UpdatedAt ) VALUES ( 1065, 2015, 'Responsabilité Sociétale d''Entreprise', 'Objectif 1- Partenariats stratégiques', 15, ' - 3 nouveaux partenaires stratégiques sur le volet RSE, et volet économique ', 50, null, '2025-07-22 02:39:15 PM');
 SET IDENTITY_INSERT HistoryCMps OFF;
 GO
+
+SET IDENTITY_INSERT Indicators
+INSERT INTO Indicators( IndicatorId, label,MaxResults,TemplateId,IsActive  ) VALUES ( 1, 'TEST', 3 ,2, true);
+
+
