@@ -207,7 +207,7 @@ function RenitialisationNonCadre() {
                             fullWidth
                             disabled={isSubmitting}
                         >
-                            {isSubmitting ? 'Réinitialisation en cours...' : 'Réinitialiser les Cadres'}
+                            {isSubmitting ? 'Réinitialisation en cours...' : 'Réinitialiser les Non-Cadres'}
                         </Button>
                     </Grid>
                 </Grid>

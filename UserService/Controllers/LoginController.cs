@@ -61,9 +61,11 @@ namespace UserService.Controllers
             else
             {
                 var errorResponse = new { result.Message, result.Type };
-                return Unauthorized(errorResponse);
+                return Ok(errorResponse);
+
             }
         }
+
 
         [HttpPost("logout")]
         public IActionResult Logout()
@@ -71,6 +73,8 @@ namespace UserService.Controllers
             Response.Cookies.Delete("AuthToken");
             return Ok(new { message = "Logged out successfully" });
         }
+
+        
 
         private async Task<ValidationResult> ValidateUser(string username, string password)
         {
@@ -89,19 +93,23 @@ namespace UserService.Controllers
                     if (user.IsAccountLockedOut())
                         return new ValidationResult { Message = "Account locked due to too many failed attempts", Type = "account_locked" };
 
-                    if (string.IsNullOrEmpty(user.EmailAddress))
-                        return new ValidationResult { Message = "User email address is not configured in LDAP", Type = "invalid_email" };
 
+                    // Validez les identifiants
                     // bool isValid = context.ValidateCredentials(username, password, ContextOptions.Negotiate);
-                    bool isValid = true;    
+                    bool isValid = true;
+
                     if (isValid)
                     {
                         var dbUser = await GetUserFromDatabaseAsync(user.EmailAddress);
                         if (dbUser == null)
                             return new ValidationResult { Message = "User not found in database", Type = "user_not_found" };
 
-                        if (dbUser.TypeUser == null)
-                            return new ValidationResult { Message = "Vous ne pouvez pas accéder. Veuillez contacter l'administrateur.", Type = "type_user_missing" };
+
+                        // Vérifiez si TypeUser est null
+                        // if (userConnected.TypeUser == null)
+                        // {
+                        //     return new ValidationResult { Message = "Vous ne pouvez pas acceder. Veuillez contacter l'administrateur.", Type = "type_user_missing" };
+                        // 
 
                         return new ValidationResult { Message = "Success", Type = "success", User = dbUser };
                     }

@@ -1211,6 +1211,13 @@ INSERT INTO UserHabilitations( HabilitationsId, UsersId ) VALUES ( 1, 'ce796eb6-
 INSERT INTO UserHabilitations( HabilitationsId, UsersId ) VALUES ( 2, 'ce796eb6-0f7e-4dbc-9c1e-de00f53de186');
 INSERT INTO UserHabilitations( HabilitationsId, UsersId ) VALUES ( 4, 'ce796eb6-0f7e-4dbc-9c1e-de00f53de186');
 INSERT INTO UserHabilitations( HabilitationsId, UsersId ) VALUES ( 3, 'ce796eb6-0f7e-4dbc-9c1e-de00f53de186');
+INSERT INTO UserHabilitations( HabilitationsId, UsersId ) VALUES ( 1, 'd6b6d0e3-d691-4cd3-bed4-da651a4aba9d');
+INSERT INTO UserHabilitations( HabilitationsId, UsersId ) VALUES ( 2, 'd6b6d0e3-d691-4cd3-bed4-da651a4aba9d');
+INSERT INTO UserHabilitations( HabilitationsId, UsersId ) VALUES ( 4, 'd6b6d0e3-d691-4cd3-bed4-da651a4aba9d');
+INSERT INTO UserHabilitations( HabilitationsId, UsersId ) VALUES ( 3, 'd6b6d0e3-d691-4cd3-bed4-da651a4aba9d');
+
+
+
 
 
 

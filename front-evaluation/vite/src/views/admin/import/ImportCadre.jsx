@@ -176,7 +176,7 @@ const handleSubmit = async (event) => {
   return (
     <Box sx={{ mx: 'auto', maxWidth: '800px', padding: '20px' }}>
       <Typography variant="h5" gutterBottom>
-        Importation par étape
+        Importation des Fichiers Cadres
       </Typography>
 
       <Grid container spacing={2} sx={{ mb: 2 }}>
