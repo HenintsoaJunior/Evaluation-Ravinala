@@ -473,3 +473,9 @@ recuperer le contenue du dossier dist pour le build
 
 Ce README complet couvre l'ensemble de l'architecture microservices avec tous les composants : UserService, EvaluationService et Frontend, facilitant la compréhension et la maintenance pour les futurs développeurs.
 ```
+
+
+
+mi parcours :
+
+collaborateur avant le manager
