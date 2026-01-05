@@ -1,9 +1,10 @@
+
 CREATE  TABLE Etats ( 
 	EtatId               int    IDENTITY  NOT NULL,
 	EtatDesignation      nvarchar(max)      NOT NULL,
 	CONSTRAINT PK_Etats PRIMARY KEY CLUSTERED ( EtatId  asc ) 
  );
-GO
+-- GO
 
 CREATE  TABLE FormTemplates (
 	TemplateId           int    IDENTITY  NOT NULL,
@@ -12,14 +13,14 @@ CREATE  TABLE FormTemplates (
 	Type                 int      NOT NULL,
 	CONSTRAINT PK_FormTemplates PRIMARY KEY CLUSTERED ( TemplateId  asc ) 
  );
-GO
+-- GO
 
 CREATE  TABLE Habilitations ( 
 	Id                   int    IDENTITY  NOT NULL,
 	Label                nvarchar(max)      NOT NULL,
 	CONSTRAINT PK_Habilitations PRIMARY KEY CLUSTERED ( Id  asc ) 
  );
-GO
+-- GO
 
 CREATE  TABLE Helps ( 
 	HelpId               int    IDENTITY  NOT NULL,
@@ -29,10 +30,10 @@ CREATE  TABLE Helps (
 	AllowedUserLevel     int      NOT NULL,
 	CONSTRAINT PK_Helps PRIMARY KEY CLUSTERED ( HelpId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_Helps_TemplateId ON Helps ( TemplateId  asc );
-GO
+-- GO
 
 CREATE  TABLE HistoryUserHelpContents ( 
 	HistoryContentId     int    IDENTITY  NOT NULL,
@@ -45,7 +46,7 @@ CREATE  TABLE HistoryUserHelpContents (
 	ArchivedAt           datetime2      NOT NULL,
 	CONSTRAINT PK_HistoryUserHelpContents PRIMARY KEY CLUSTERED ( HistoryContentId  asc ) 
  );
-GO
+-- GO
 
 CREATE  TABLE Indicators ( 
 	IndicatorId          int    IDENTITY  NOT NULL,
@@ -55,17 +56,19 @@ CREATE  TABLE Indicators (
 	IsActive             bit      NOT NULL,
 	CONSTRAINT PK_Indicators PRIMARY KEY CLUSTERED ( IndicatorId  asc ) 
  );
-GO
+-- GO
+
+
 
 CREATE NONCLUSTERED INDEX IX_Indicators_TemplateId ON Indicators ( TemplateId  asc );
-GO
+-- GO
 
 CREATE  TABLE Levels ( 
 	LevelId              int    IDENTITY  NOT NULL,
 	LevelName            nvarchar(50)      NOT NULL,
 	CONSTRAINT PK_Levels PRIMARY KEY CLUSTERED ( LevelId  asc ) 
  );
-GO
+-- GO
 
 CREATE  TABLE Notifications ( 
 	Id                   int    IDENTITY  NOT NULL,
@@ -78,7 +81,7 @@ CREATE  TABLE Notifications (
 	EvalId               int      NULL,
 	CONSTRAINT PK_Notifications PRIMARY KEY CLUSTERED ( Id  asc ) 
  );
-GO
+-- GO
 
 CREATE  TABLE ObjectiveColumns ( 
 	ColumnId             int    IDENTITY  NOT NULL,
@@ -86,27 +89,30 @@ CREATE  TABLE ObjectiveColumns (
 	IsActive             bit      NOT NULL,
 	CONSTRAINT PK_ObjectiveColumns PRIMARY KEY CLUSTERED ( ColumnId  asc ) 
  );
-GO
+-- GO
 
 CREATE  TABLE Sections ( 
 	Id                   int    IDENTITY  NOT NULL,
 	Name                 nvarchar(max)      NOT NULL,
 	CONSTRAINT PK_Sections PRIMARY KEY CLUSTERED ( Id  asc ) 
  );
-GO
+-- GO
 
-CREATE  TABLE TemplateStrategicPriorities ( 
-	TemplatePriorityId   int    IDENTITY  NOT NULL,
-	Name                 nvarchar(max)      NOT NULL,
-	MaxObjectives        int      NOT NULL,
-	TemplateId           int      NOT NULL,
-	IsActif              bit      NOT NULL,
-	CONSTRAINT PK_TemplateStrategicPriorities PRIMARY KEY CLUSTERED ( TemplatePriorityId  asc ) 
- );
-GO
+CREATE TABLE TemplateStrategicPriorities ( 
+    TemplatePriorityId   int    IDENTITY NOT NULL,
+    Name                 nvarchar(max)   NOT NULL,
+    MaxObjectives        int             NOT NULL,
+    TemplateId           int             NOT NULL,
+    IsActif              bit             NOT NULL,
+    Ponderation          decimal(15,2)   NULL,
+    CONSTRAINT PK_TemplateStrategicPriorities 
+        PRIMARY KEY CLUSTERED ( TemplatePriorityId ASC ) 
+);
+-- GO
+
 
 CREATE NONCLUSTERED INDEX IX_TemplateStrategicPriorities_TemplateId ON TemplateStrategicPriorities ( TemplateId  asc );
-GO
+-- GO
 
 CREATE  TABLE UserEvaluationWeights ( 
 	WeightId             int    IDENTITY  NOT NULL,
@@ -115,15 +121,15 @@ CREATE  TABLE UserEvaluationWeights (
 	IndicatorWeightTotal decimal(18,2)      NOT NULL,
 	CONSTRAINT PK_UserEvaluationWeights PRIMARY KEY CLUSTERED ( WeightId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_UserEvaluationWeights_TemplateId ON UserEvaluationWeights ( TemplateId  asc );
-GO
+-- GO
 
 CREATE  TABLE Users ( 
 	Id                   nvarchar(450)      NOT NULL,
 	Matricule            nvarchar(max)      NOT NULL,
-	Name                 nvarchar(max)      NOT NULL,
+	Name                 nvarchar(max)      NULL,
 	Email                nvarchar(max)      NOT NULL,
 	Poste                nvarchar(max)      NULL,
 	Department           nvarchar(max)      NULL,
@@ -134,14 +140,14 @@ CREATE  TABLE Users (
 	TypeUser             int      NULL,
 	CONSTRAINT PK_Users PRIMARY KEY CLUSTERED ( Id  asc ) 
  );
-GO
+-- GO
 
 CREATE  TABLE [__EFMigrationsHistory] ( 
 	MigrationId          nvarchar(150)      NOT NULL,
 	ProductVersion       nvarchar(32)      NOT NULL,
 	CONSTRAINT PK___EFMigrationsHistory PRIMARY KEY CLUSTERED ( MigrationId  asc ) 
  );
-GO
+-- GO
 
 CREATE  TABLE Competences ( 
 	CompetenceId         int    IDENTITY  NOT NULL,
@@ -149,10 +155,10 @@ CREATE  TABLE Competences (
 	Name                 nvarchar(max)      NOT NULL,
 	CONSTRAINT PK_Competences PRIMARY KEY CLUSTERED ( CompetenceId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_Competences_TemplateId ON Competences ( TemplateId  asc );
-GO
+-- GO
 
 CREATE  TABLE Evaluations ( 
 	EvalId               int    IDENTITY  NOT NULL,
@@ -168,13 +174,13 @@ CREATE  TABLE Evaluations (
 	IndicatorWeightTotal decimal(18,2)      NULL,
 	CONSTRAINT PK_Evaluations PRIMARY KEY CLUSTERED ( EvalId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_Evaluations_EtatId ON Evaluations ( EtatId  asc );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_Evaluations_TemplateId ON Evaluations ( TemplateId  asc );
-GO
+-- GO
 
 CREATE  TABLE HabilitationAdmins ( 
 	Id                   int    IDENTITY  NOT NULL,
@@ -183,20 +189,20 @@ CREATE  TABLE HabilitationAdmins (
 	IsGranted            bit      NOT NULL,
 	CONSTRAINT PK_HabilitationAdmins PRIMARY KEY CLUSTERED ( Id  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_HabilitationAdmins_SectionId ON HabilitationAdmins ( SectionId  asc );
-GO
+-- GO
 
 CREATE  TABLE HabilitationHabilitationAdmin ( 
 	HabilitationAdminsId int      NOT NULL,
 	HabilitationsId      int      NOT NULL,
 	CONSTRAINT PK_HabilitationHabilitationAdmin PRIMARY KEY CLUSTERED ( HabilitationAdminsId  asc, HabilitationsId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_HabilitationHabilitationAdmin_HabilitationsId ON HabilitationHabilitationAdmin ( HabilitationsId  asc );
-GO
+-- GO
 
 CREATE  TABLE UserEvaluations ( 
 	UserEvalId           int    IDENTITY  NOT NULL,
@@ -204,20 +210,20 @@ CREATE  TABLE UserEvaluations (
 	UserId               nvarchar(max)      NOT NULL,
 	CONSTRAINT PK_UserEvaluations PRIMARY KEY CLUSTERED ( UserEvalId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_UserEvaluations_EvalId ON UserEvaluations ( EvalId  asc );
-GO
+-- GO
 
 CREATE  TABLE UserHabilitations ( 
 	HabilitationsId      int      NOT NULL,
 	UsersId              nvarchar(450)      NOT NULL,
 	CONSTRAINT PK_UserHabilitations PRIMARY KEY CLUSTERED ( HabilitationsId  asc, UsersId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_UserHabilitations_UsersId ON UserHabilitations ( UsersId  asc );
-GO
+-- GO
 
 CREATE  TABLE UserHelpContents ( 
 	ContentId            int    IDENTITY  NOT NULL,
@@ -227,13 +233,13 @@ CREATE  TABLE UserHelpContents (
 	Content              nvarchar(max)      NOT NULL,
 	CONSTRAINT PK_UserHelpContents PRIMARY KEY CLUSTERED ( ContentId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_UserHelpContents_HelpId ON UserHelpContents ( HelpId  asc );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_UserHelpContents_UserEvalId ON UserHelpContents ( UserEvalId  asc );
-GO
+-- GO
 
 CREATE  TABLE UserIndicators ( 
 	UserIndicatorId      int    IDENTITY  NOT NULL,
@@ -242,13 +248,13 @@ CREATE  TABLE UserIndicators (
 	IndicatorId          int      NOT NULL,
 	CONSTRAINT PK_UserIndicators PRIMARY KEY CLUSTERED ( UserIndicatorId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_UserIndicators_IndicatorId ON UserIndicators ( IndicatorId  asc );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_UserIndicators_UserEvalId ON UserIndicators ( UserEvalId  asc );
-GO
+-- GO
 
 CREATE  TABLE UserObjectives ( 
 	ObjectiveId          int    IDENTITY  NOT NULL,
@@ -262,13 +268,13 @@ CREATE  TABLE UserObjectives (
 	CreatedAt            datetime2      NOT NULL,
 	CONSTRAINT PK_UserObjectives PRIMARY KEY CLUSTERED ( ObjectiveId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_UserObjectives_PriorityId ON UserObjectives ( PriorityId  asc );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_UserObjectives_UserEvalId ON UserObjectives ( UserEvalId  asc );
-GO
+-- GO
 
 CREATE  TABLE CompetenceLevels ( 
 	CompetenceLevelId    int    IDENTITY  NOT NULL,
@@ -277,13 +283,13 @@ CREATE  TABLE CompetenceLevels (
 	Description          nvarchar(max)      NOT NULL,
 	CONSTRAINT PK_CompetenceLevels PRIMARY KEY CLUSTERED ( CompetenceLevelId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_CompetenceLevels_CompetenceId ON CompetenceLevels ( CompetenceId  asc );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_CompetenceLevels_LevelId ON CompetenceLevels ( LevelId  asc );
-GO
+-- GO
 
 CREATE  TABLE HistoryCFis ( 
 	HcfiId               int    IDENTITY  NOT NULL,
@@ -297,10 +303,10 @@ CREATE  TABLE HistoryCFis (
 	UpdatedAt            datetime2      NOT NULL,
 	CONSTRAINT PK_HistoryCFis PRIMARY KEY CLUSTERED ( HcfiId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_HistoryCFis_UserEvalId ON HistoryCFis ( UserEvalId  asc );
-GO
+-- GO
 
 CREATE  TABLE HistoryCFos ( 
 	HcfId                int    IDENTITY  NOT NULL,
@@ -314,10 +320,10 @@ CREATE  TABLE HistoryCFos (
 	CreatedAt            datetime2      NOT NULL,
 	CONSTRAINT PK_HistoryCFos PRIMARY KEY CLUSTERED ( HcfId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_HistoryCFos_UserEvalId ON HistoryCFos ( UserEvalId  asc );
-GO
+-- GO
 
 CREATE  TABLE HistoryCMps ( 
 	HcmId                int    IDENTITY  NOT NULL,
@@ -331,10 +337,10 @@ CREATE  TABLE HistoryCMps (
 	UpdatedAt            datetime2      NOT NULL,
 	CONSTRAINT PK_HistoryCMps PRIMARY KEY CLUSTERED ( HcmId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_HistoryCMps_UserEvalId ON HistoryCMps ( UserEvalId  asc );
-GO
+-- GO
 
 CREATE  TABLE HistoryObjectiveColumnValuesFis ( 
 	HistValueId          int    IDENTITY  NOT NULL,
@@ -345,10 +351,10 @@ CREATE  TABLE HistoryObjectiveColumnValuesFis (
 	CreatedAt            datetime2      NOT NULL,
 	CONSTRAINT PK_HistoryObjectiveColumnValuesFis PRIMARY KEY CLUSTERED ( HistValueId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_HistoryObjectiveColumnValuesFis_HcfiId ON HistoryObjectiveColumnValuesFis ( HcfiId  asc );
-GO
+-- GO
 
 CREATE  TABLE HistoryObjectiveColumnValuesFos ( 
 	HistValueId          int    IDENTITY  NOT NULL,
@@ -359,10 +365,10 @@ CREATE  TABLE HistoryObjectiveColumnValuesFos (
 	CreatedAt            datetime2      NOT NULL,
 	CONSTRAINT PK_HistoryObjectiveColumnValuesFos PRIMARY KEY CLUSTERED ( HistValueId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_HistoryObjectiveColumnValuesFos_HcfId ON HistoryObjectiveColumnValuesFos ( HcfId  asc );
-GO
+-- GO
 
 CREATE  TABLE HistoryObjectiveColumnValuesMps ( 
 	HistValueId          int    IDENTITY  NOT NULL,
@@ -373,10 +379,10 @@ CREATE  TABLE HistoryObjectiveColumnValuesMps (
 	CreatedAt            datetime2      NOT NULL,
 	CONSTRAINT PK_HistoryObjectiveColumnValuesMps PRIMARY KEY CLUSTERED ( HistValueId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_HistoryObjectiveColumnValuesMps_HcmId ON HistoryObjectiveColumnValuesMps ( HcmId  asc );
-GO
+-- GO
 
 CREATE  TABLE HistoryUserCompetenceFOs ( 
 	HistoryUserCompetenceId int    IDENTITY  NOT NULL,
@@ -385,10 +391,10 @@ CREATE  TABLE HistoryUserCompetenceFOs (
 	Performance          decimal(18,2)      NOT NULL,
 	CONSTRAINT PK_HistoryUserCompetenceFOs PRIMARY KEY CLUSTERED ( HistoryUserCompetenceId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_HistoryUserCompetenceFOs_UserEvalId ON HistoryUserCompetenceFOs ( UserEvalId  asc );
-GO
+-- GO
 
 CREATE  TABLE HistoryUserCompetenceMPs ( 
 	HistoryUserCompetenceId int    IDENTITY  NOT NULL,
@@ -397,10 +403,10 @@ CREATE  TABLE HistoryUserCompetenceMPs (
 	Performance          decimal(18,2)      NOT NULL,
 	CONSTRAINT PK_HistoryUserCompetenceMPs PRIMARY KEY CLUSTERED ( HistoryUserCompetenceId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_HistoryUserCompetenceMPs_UserEvalId ON HistoryUserCompetenceMPs ( UserEvalId  asc );
-GO
+-- GO
 
 CREATE  TABLE HistoryUserIndicatorFOs ( 
 	HistoryUserIndicatorFOId int    IDENTITY  NOT NULL,
@@ -412,10 +418,10 @@ CREATE  TABLE HistoryUserIndicatorFOs (
 	CreatedAt            datetime2      NOT NULL,
 	CONSTRAINT PK_HistoryUserIndicatorFOs PRIMARY KEY CLUSTERED ( HistoryUserIndicatorFOId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_HistoryUserIndicatorFOs_UserEvalId ON HistoryUserIndicatorFOs ( UserEvalId  asc );
-GO
+-- GO
 
 CREATE  TABLE HistoryUserIndicatorMPs ( 
 	HistoryUserIndicatorMPId int    IDENTITY  NOT NULL,
@@ -425,10 +431,10 @@ CREATE  TABLE HistoryUserIndicatorMPs (
 	Result               decimal(18,2)      NOT NULL,
 	CONSTRAINT PK_HistoryUserIndicatorMPs PRIMARY KEY CLUSTERED ( HistoryUserIndicatorMPId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_HistoryUserIndicatorMPs_UserEvalId ON HistoryUserIndicatorMPs ( UserEvalId  asc );
-GO
+-- GO
 
 CREATE  TABLE HistoryUserindicatorFis ( 
 	HistoryUserindicatorFiId int    IDENTITY  NOT NULL,
@@ -440,10 +446,10 @@ CREATE  TABLE HistoryUserindicatorFis (
 	CreatedAt            datetime2      NOT NULL,
 	CONSTRAINT PK_HistoryUserindicatorFis PRIMARY KEY CLUSTERED ( HistoryUserindicatorFiId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_HistoryUserindicatorFis_UserEvalId ON HistoryUserindicatorFis ( UserEvalId  asc );
-GO
+-- GO
 
 CREATE  TABLE ObjectiveColumnValues ( 
 	ValueId              int    IDENTITY  NOT NULL,
@@ -452,13 +458,13 @@ CREATE  TABLE ObjectiveColumnValues (
 	Value                nvarchar(max)      NOT NULL,
 	CONSTRAINT PK_ObjectiveColumnValues PRIMARY KEY CLUSTERED ( ValueId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_ObjectiveColumnValues_ColumnId ON ObjectiveColumnValues ( ColumnId  asc );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_ObjectiveColumnValues_ObjectiveId ON ObjectiveColumnValues ( ObjectiveId  asc );
-GO
+-- GO
 
 CREATE  TABLE UserCompetences ( 
 	UserCompetenceId     int    IDENTITY  NOT NULL,
@@ -467,13 +473,13 @@ CREATE  TABLE UserCompetences (
 	Performance          decimal(18,2)      NOT NULL,
 	CONSTRAINT PK_UserCompetences PRIMARY KEY CLUSTERED ( UserCompetenceId  asc ) 
  );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_UserCompetences_CompetenceId ON UserCompetences ( CompetenceId  asc );
-GO
+-- GO
 
 CREATE NONCLUSTERED INDEX IX_UserCompetences_UserEvalId ON UserCompetences ( UserEvalId  asc );
-GO
+-- GO
 
 CREATE  TABLE UserIndicatorResults ( 
 	ResultId             int    IDENTITY  NOT NULL,
@@ -482,121 +488,134 @@ CREATE  TABLE UserIndicatorResults (
 	Result               decimal(18,2)      NOT NULL,
 	CONSTRAINT PK_UserIndicatorResults PRIMARY KEY CLUSTERED ( ResultId  asc ) 
  );
-GO
+-- GO
+
+	CREATE TABLE AuditLogs (
+		Id INT IDENTITY(1,1) PRIMARY KEY,
+		UserId NVARCHAR(255) NOT NULL,
+		Action NVARCHAR(500) NOT NULL,   
+		TableName NVARCHAR(255) NULL,   
+		RecordId NVARCHAR(100) NULL,    
+		OldValues NVARCHAR(MAX) NULL,   
+		NewValues NVARCHAR(MAX) NULL,   
+		Timestamp DATETIME2 NOT NULL DEFAULT SYSDATETIME()
+	);
+	-- GO
+
 
 CREATE NONCLUSTERED INDEX IX_UserIndicatorResults_UserIndicatorId ON UserIndicatorResults ( UserIndicatorId  asc );
-GO
+-- GO
 
 ALTER TABLE CompetenceLevels ADD CONSTRAINT FK_CompetenceLevels_Competences_CompetenceId FOREIGN KEY ( CompetenceId ) REFERENCES Competences( CompetenceId );
-GO
+-- GO
 
 ALTER TABLE CompetenceLevels ADD CONSTRAINT FK_CompetenceLevels_Levels_LevelId FOREIGN KEY ( LevelId ) REFERENCES Levels( LevelId );
-GO
+-- GO
 
 ALTER TABLE Competences ADD CONSTRAINT FK_Competences_FormTemplates_TemplateId FOREIGN KEY ( TemplateId ) REFERENCES FormTemplates( TemplateId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE Evaluations ADD CONSTRAINT FK_Evaluations_Etats_EtatId FOREIGN KEY ( EtatId ) REFERENCES Etats( EtatId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE Evaluations ADD CONSTRAINT FK_Evaluations_FormTemplates_TemplateId FOREIGN KEY ( TemplateId ) REFERENCES FormTemplates( TemplateId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE HabilitationAdmins ADD CONSTRAINT FK_HabilitationAdmins_Sections_SectionId FOREIGN KEY ( SectionId ) REFERENCES Sections( Id ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE HabilitationHabilitationAdmin ADD CONSTRAINT FK_HabilitationHabilitationAdmin_HabilitationAdmins_HabilitationAdminsId FOREIGN KEY ( HabilitationAdminsId ) REFERENCES HabilitationAdmins( Id ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE HabilitationHabilitationAdmin ADD CONSTRAINT FK_HabilitationHabilitationAdmin_Habilitations_HabilitationsId FOREIGN KEY ( HabilitationsId ) REFERENCES Habilitations( Id ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE Helps ADD CONSTRAINT FK_Helps_FormTemplates_TemplateId FOREIGN KEY ( TemplateId ) REFERENCES FormTemplates( TemplateId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE HistoryCFis ADD CONSTRAINT FK_HistoryCFis_UserEvaluations_UserEvalId FOREIGN KEY ( UserEvalId ) REFERENCES UserEvaluations( UserEvalId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE HistoryCFos ADD CONSTRAINT FK_HistoryCFos_UserEvaluations_UserEvalId FOREIGN KEY ( UserEvalId ) REFERENCES UserEvaluations( UserEvalId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE HistoryCMps ADD CONSTRAINT FK_HistoryCMps_UserEvaluations_UserEvalId FOREIGN KEY ( UserEvalId ) REFERENCES UserEvaluations( UserEvalId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE HistoryObjectiveColumnValuesFis ADD CONSTRAINT FK_HistoryObjectiveColumnValuesFis_HistoryCFis_HcfiId FOREIGN KEY ( HcfiId ) REFERENCES HistoryCFis( HcfiId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE HistoryObjectiveColumnValuesFos ADD CONSTRAINT FK_HistoryObjectiveColumnValuesFos_HistoryCFos_HcfId FOREIGN KEY ( HcfId ) REFERENCES HistoryCFos( HcfId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE HistoryObjectiveColumnValuesMps ADD CONSTRAINT FK_HistoryObjectiveColumnValuesMps_HistoryCMps_HcmId FOREIGN KEY ( HcmId ) REFERENCES HistoryCMps( HcmId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE HistoryUserCompetenceFOs ADD CONSTRAINT FK_HistoryUserCompetenceFOs_UserEvaluations_UserEvalId FOREIGN KEY ( UserEvalId ) REFERENCES UserEvaluations( UserEvalId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE HistoryUserCompetenceMPs ADD CONSTRAINT FK_HistoryUserCompetenceMPs_UserEvaluations_UserEvalId FOREIGN KEY ( UserEvalId ) REFERENCES UserEvaluations( UserEvalId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE HistoryUserIndicatorFOs ADD CONSTRAINT FK_HistoryUserIndicatorFOs_UserEvaluations_UserEvalId FOREIGN KEY ( UserEvalId ) REFERENCES UserEvaluations( UserEvalId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE HistoryUserIndicatorMPs ADD CONSTRAINT FK_HistoryUserIndicatorMPs_UserEvaluations_UserEvalId FOREIGN KEY ( UserEvalId ) REFERENCES UserEvaluations( UserEvalId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE HistoryUserindicatorFis ADD CONSTRAINT FK_HistoryUserindicatorFis_UserEvaluations_UserEvalId FOREIGN KEY ( UserEvalId ) REFERENCES UserEvaluations( UserEvalId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE Indicators ADD CONSTRAINT FK_Indicators_FormTemplates_TemplateId FOREIGN KEY ( TemplateId ) REFERENCES FormTemplates( TemplateId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE ObjectiveColumnValues ADD CONSTRAINT FK_ObjectiveColumnValues_ObjectiveColumns_ColumnId FOREIGN KEY ( ColumnId ) REFERENCES ObjectiveColumns( ColumnId );
-GO
+-- GO
 
 ALTER TABLE ObjectiveColumnValues ADD CONSTRAINT FK_ObjectiveColumnValues_UserObjectives_ObjectiveId FOREIGN KEY ( ObjectiveId ) REFERENCES UserObjectives( ObjectiveId );
-GO
+-- GO
 
 ALTER TABLE TemplateStrategicPriorities ADD CONSTRAINT FK_TemplateStrategicPriorities_FormTemplates_TemplateId FOREIGN KEY ( TemplateId ) REFERENCES FormTemplates( TemplateId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE UserCompetences ADD CONSTRAINT FK_UserCompetences_Competences_CompetenceId FOREIGN KEY ( CompetenceId ) REFERENCES Competences( CompetenceId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE UserCompetences ADD CONSTRAINT FK_UserCompetences_UserEvaluations_UserEvalId FOREIGN KEY ( UserEvalId ) REFERENCES UserEvaluations( UserEvalId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE UserEvaluationWeights ADD CONSTRAINT FK_UserEvaluationWeights_FormTemplates_TemplateId FOREIGN KEY ( TemplateId ) REFERENCES FormTemplates( TemplateId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE UserEvaluations ADD CONSTRAINT FK_UserEvaluations_Evaluations_EvalId FOREIGN KEY ( EvalId ) REFERENCES Evaluations( EvalId );
-GO
+-- GO
 
 ALTER TABLE UserHabilitations ADD CONSTRAINT FK_UserHabilitations_Habilitations_HabilitationsId FOREIGN KEY ( HabilitationsId ) REFERENCES Habilitations( Id ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE UserHabilitations ADD CONSTRAINT FK_UserHabilitations_Users_UsersId FOREIGN KEY ( UsersId ) REFERENCES Users( Id ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE UserHelpContents ADD CONSTRAINT FK_UserHelpContents_Helps_HelpId FOREIGN KEY ( HelpId ) REFERENCES Helps( HelpId );
-GO
+-- GO
 
 ALTER TABLE UserHelpContents ADD CONSTRAINT FK_UserHelpContents_UserEvaluations_UserEvalId FOREIGN KEY ( UserEvalId ) REFERENCES UserEvaluations( UserEvalId );
-GO
+-- GO
 
 ALTER TABLE UserIndicatorResults ADD CONSTRAINT FK_UserIndicatorResults_UserIndicators_UserIndicatorId FOREIGN KEY ( UserIndicatorId ) REFERENCES UserIndicators( UserIndicatorId );
-GO
+-- GO
 
 ALTER TABLE UserIndicators ADD CONSTRAINT FK_UserIndicators_Indicators_IndicatorId FOREIGN KEY ( IndicatorId ) REFERENCES Indicators( IndicatorId ) ON DELETE CASCADE;
-GO
+-- GO
 
 ALTER TABLE UserIndicators ADD CONSTRAINT FK_UserIndicators_UserEvaluations_UserEvalId FOREIGN KEY ( UserEvalId ) REFERENCES UserEvaluations( UserEvalId );
-GO
+-- GO
 
 ALTER TABLE UserObjectives ADD CONSTRAINT FK_UserObjectives_TemplateStrategicPriorities_PriorityId FOREIGN KEY ( PriorityId ) REFERENCES TemplateStrategicPriorities( TemplatePriorityId );
-GO
+-- GO
 
 ALTER TABLE UserObjectives ADD CONSTRAINT FK_UserObjectives_UserEvaluations_UserEvalId FOREIGN KEY ( UserEvalId ) REFERENCES UserEvaluations( UserEvalId );
-GO
+-- GO
 
 SET IDENTITY_INSERT Etats ON;
 INSERT INTO Etats( EtatId, EtatDesignation ) VALUES ( 1, 'Créé');
@@ -752,6 +771,7 @@ INSERT INTO Sections( Id, Name ) VALUES ( 7, 'Gestion import');
 INSERT INTO Sections( Id, Name ) VALUES ( 8, 'Gestion export');
 INSERT INTO Sections( Id, Name ) VALUES ( 9, 'Gestion des habilitations');
 INSERT INTO Sections( Id, Name ) VALUES ( 10, 'Gestion des Dashbords');
+INSERT INTO Sections( Id, Name ) VALUES ( 11, 'Gestion Logs');
 SET IDENTITY_INSERT Sections OFF;
 
 SET IDENTITY_INSERT TemplateStrategicPriorities ON;
@@ -805,7 +825,7 @@ INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, Su
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '26b7fe7c-73f6-4cdf-b949-2f87508fe834', '00283', 'Robert RATSIRAHONANA (DSI)', 'robert.ratsirahonana@ravinala-airports.aero', 'Technicien AOS & IT', 'DSI', 'ecead56b-8c32-4a01-bafd-4a05e135949f', 'Nathalie Doriane RALAIARIMALALA (DSI)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '294fa2ed-b737-4b45-bfcd-ba8e7f0884db', '00120', 'Toetra Andoarinelina RASOLOFONIAINA (DOP)', 'ando.rasolofoniaina@ravinala-airports.aero', 'Chef de Quart', 'DOP', '0b27a9f1-3add-4181-847a-cc2dc8bcfa29', 'Tefy Antonio Patrick RAJAONAH (DOP)', null, null, 0);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '29cef9c3-efbe-4c6e-9e65-f0c728986b67', '00421', 'Elsy HARVEL (DCM)', 'elsy.harvel@ravinala-airports.aero', 'Cheffe de Services Développement des Activités Non Aéronautique', 'DCM', 'b2b5434a-736d-4d06-bfd7-16e54a7c7c71', 'Zoelisoa RAJOHNSON (DCM)', null, null, null);
-INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '2aef7554-0f9c-4a49-adf2-5a646e49aca3', 'ST150', 'Finaritra Amy ANDRIANIAINA (DSI)', 'amy.andrianiaina@ravinala-airports.aero', 'Stagiaire DSI', 'DSI', 'db805c79-6ff8-45eb-97b2-f6825775f72f', 'Christelle RAKOTOMAVO (DSI)', null, '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', 0);
+-- -- -- -- -- -- -- -- -- -- -- -- -- INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '2aef7554-0f9c-4a49-adf2-5a646e49aca3', 'ST150', 'Finaritra Amy ANDRIANIAINA (DSI)', 'amy.andrianiaina@ravinala-airports.aero', 'Stagiaire DSI', 'DSI', 'db805c79-6ff8-45eb-97b2-f6825775f72f', 'Christelle RAKOTOMAVO (DSI)', null, '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', 0);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '2b6877d3-09d9-42cb-9f06-ecd63048bff5', '00397', 'Oeliarisoa Nomenjanahary ANDRIAMASOANDRO (DCM)', 'oeliarisoa.andriamasoandro@ravinala-airports.aero', 'Cheffe de Département Immobilier', 'DCM', 'b2b5434a-736d-4d06-bfd7-16e54a7c7c71', 'Zoelisoa RAJOHNSON (DCM)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '2e74c3c9-3154-473b-a102-b02b3b48a9bd', 'enqueteur.tnr', 'Enquêteur TNR', 'enqueteur.tnr@ravinala-airports.aero', '', '', null, null, null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '2e85cd75-153a-427f-98cd-3aca60cd8ea4', '00179', 'Johanna Marie RAVOLOLONIRINA (DOP)', 'johanna.ravololonirina@ravinala-airports.aero', 'Assistante Administrative et Financière', 'DOP', '0b27a9f1-3add-4181-847a-cc2dc8bcfa29', 'Tefy Antonio Patrick RAJAONAH (DOP)', null, null, null);
@@ -834,7 +854,7 @@ INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, Su
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '4643e977-e66c-4de2-9f0c-de6795aca3a8', '00322', 'Fandresena Vatosoa Anouëla ANDRIANIAINA (DOP)', 'anouela.andrianiaina@ravinala-airports.aero', 'Agent d’accueil', 'DOP', '30f2fa8a-f859-43c4-a06b-e9317c76c367', 'Rabemanantsoa Caroline RAMILIJAONA (DOP)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '46cf18b7-479c-43f6-8846-3558b62e63d8', '00125', 'Nofy HARISOA (DOP)', 'nofy.harisoa@ravinala-airports.aero', 'Caissière Parking', 'DOP', '20fff662-51ee-4fc4-99ae-dc7a9c361cbd', 'Fanjanirina RAFANILONIAINA (DOP)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '471fa3cf-7275-4e38-ad3d-e4a756b21aff', '00206', 'Ianjanirina RABETOKOTANY  (DOP)', 'ianjanirina.rabetokotany@ravinala-airports.aero', 'Chargée en Système de Gestion de la Sécurité', 'DOP', '44e428dd-85bf-45a2-8af8-929e2487b4bc', 'Sambatra RAKOTOARISOA (DOP)', null, null, null);
-INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '476ed4c5-385c-4661-b972-18c592b10cc6', '00256', 'Laingo RAHAJATAFITASOA (DOP)', 'laingo.rahajatafitasoa@ravinala-airports.aero', 'Agent d’accueil', 'DOP', 'a751c8ff-f95b-431e-b7a6-6002628b379b', 'Maminiaina RAZAKAMANANTSOA (DOP)', null, null, null);
+-- -- INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '476ed4c5-385c-4661-b972-18c592b10cc6', '00256', 'Laingo RAHAJATAFITASOA (DOP)', 'laingo.rahajatafitasoa@ravinala-airports.aero', 'Agent d’accueil', 'DOP', 'a751c8ff-f95b-431e-b7a6-6002628b379b', 'Maminiaina RAZAKAMANANTSOA (DOP)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '4898289a-b951-47fd-95c1-ce96020c8bb2', '00075', 'Yvon Frederson SOLOMAMY (DOP)', 'yvon.solomamy@ravinala-airports.aero', 'Conducteur de Passerelle', 'DOP', 'f904830e-8cf9-41ae-8520-66ec41ce7b31', 'RAZALINE (DOP)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '498d0893-9691-45f0-a47e-560ba2f37c9d', '00169', 'A. Tahina RAHARISON (DOP)', 'tahina.raharison@ravinala-airports.aero', 'Chef superviseur parking', 'DOP', '20fff662-51ee-4fc4-99ae-dc7a9c361cbd', 'Fanjanirina RAFANILONIAINA (DOP)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '4a1c6b67-79fc-4ada-bec2-e9bf4daf2309', '00150', 'François ZARATOMBO (DOP)', 'francois.zaratombo@ravinala-airports.aero', 'Agent de piste', 'DOP', '0b27a9f1-3add-4181-847a-cc2dc8bcfa29', 'Tefy Antonio Patrick RAJAONAH (DOP)', null, null, null);
@@ -875,12 +895,12 @@ INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, Su
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '6da43ef5-687e-42bf-83a6-3fdc3a91cb44', '00198', 'Meja RAKOTOMANGA  (DOP)', 'meja.rakotomanga@ravinala-airports.aero', 'Agente Slot AOCC', 'DOP', '4c8cfbd5-435e-423b-bdf8-78d95000899e', 'Mamitiana RABARIJAONA (DOP)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '6f76bda1-28b9-4666-8c7e-56d176dea46c', '00233', 'Miary RASAMOELY (DOP)', 'miary.rasamoely@ravinala-airports.aero', 'Cheffe de Département Terminal et Landside', 'DOP', '814543aa-3dff-4ab9-a822-15fac34e3ba1', 'Caroline PETIT (DOP)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '70cbfcf5-8eec-4400-9fc8-c853eb7c4c5f', 'AG002', 'Heriniaina Kaliana RANAIVOARIJAONA (DOP)', 'kaliana.ranaivoarijaona@ravinala-airports.aero', 'Agent d''accueil', 'DOP', 'f904830e-8cf9-41ae-8520-66ec41ce7b31', 'RAZALINE (DOP)', null, null, null);
-INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '71175805-a3a0-467d-800e-0317beaa9a33', '00011', 'Haingotiana RALAIARIMANANA (DOP)', 'haingo.ralaiarimanana@ravinala-airports.aero', 'Attachée de Direction', 'DGE', 'ec738732-6e94-4288-be4a-c098408d199d', 'Daniel LEFEBVRE (DGE)', null, null, 0);
+-- -- INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '71175805-a3a0-467d-800e-0317beaa9a33', '00011', 'Haingotiana RALAIARIMANANA (DOP)', 'haingo.ralaiarimanana@ravinala-airports.aero', 'Attachée de Direction', 'DGE', 'ec738732-6e94-4288-be4a-c098408d199d', 'Daniel LEFEBVRE (DGE)', null, null, 0);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '71fa26af-d149-4dd8-9790-1dfe24327889', '00121', 'Volahasina RAKOTOARIVELO (DOP)', 'volahasina.rakotoarivelo@ravinala-airports.aero', 'Conducteur de Passerelle', 'DOP', '4c8cfbd5-435e-423b-bdf8-78d95000899e', 'Mamitiana RABARIJAONA (DOP)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '73f0b252-ee8b-4574-973e-fc486866986c', '00163', 'Tony Johary RAJAONARIVELO (DOP)', 'tony.rajaonarivelo@ravinala-airports.aero', 'Responsable Ressources et Programme', 'DOP', '906d7b48-5689-4b72-95bc-304f42a66c93', 'Martial Guy ESSOMBA (DOP)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '748fa96b-d149-48f3-8a23-5ed43d72d272', '00395', 'Maholy RANIVO ANDRIAMANANA (DOP)', 'maholy.ranivo@ravinala-airports.aero', 'Agent d’accueil', 'DOP', '30f2fa8a-f859-43c4-a06b-e9317c76c367', 'Rabemanantsoa Caroline RAMILIJAONA (DOP)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '74c44520-ab86-4247-94b6-e255740db964', 'AG009', 'Mario Patrick RANAIVONJANAHARY', 'patrick.ranaivonjanahary@ravinala-airports.aero', 'Agent d’accueil', 'DOP', 'a751c8ff-f95b-431e-b7a6-6002628b379b', 'Maminiaina RAZAKAMANANTSOA (DOP)', null, null, null);
-INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '766d6ae8-4293-4ec6-a7d8-b69c05b19977', '00383', 'Tantely Haingosoa BENAMAHARO (DRH)', 'tantely.benamaharo@ravinala-airports.aero', 'Responsable Administratif RH et Recrutement', 'DRH', '76c25f37-2089-4e81-8329-1b63d880b71a', 'Herinomenjanaharilala Sedera RASOLOFONDRAMANAMBE (DRH)', null, null, null);
+-- INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '766d6ae8-4293-4ec6-a7d8-b69c05b19977', '00383', 'Tantely Haingosoa BENAMAHARO (DRH)', 'tantely.benamaharo@ravinala-airports.aero', 'Responsable Administratif RH et Recrutement', 'DRH', '76c25f37-2089-4e81-8329-1b63d880b71a', 'Herinomenjanaharilala Sedera RASOLOFONDRAMANAMBE (DRH)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '76c25f37-2089-4e81-8329-1b63d880b71a', '00358', 'Herinomenjanaharilala Sedera RASOLOFONDRAMANAMBE (DRH)', 'hery.rasolofondramanambe@ravinala-airports.aero', 'Chef de Département Développement RH et Rémunération', 'DRH', '002b1f12-e8c5-4a30-81ca-e8532855de71', 'Dealilalaina Sedera RASOLOMANANA (DRH)', null, null, 0);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '770712b1-14f4-4afe-bf33-5da0958f4e7c', '00406', 'Kajasoa RAKOTOMAHANDRY (DT)', 'kajasoa.rakotomahandry@ravinala-airports.aero', 'Chargée de Projet', 'DT', '795790a4-02f8-4c36-a80e-eb66eb184097', 'Natolotra RAJOELINA (DT)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '786c4b19-47b2-4764-b5fd-d04268fd1d08', '00324', 'Nantenaina Mielle ANDRIANOMENJANAHARY (DOP)', 'nantenaina.andrianomenjanahary@ravinala-airports.aero', 'Agent d’accueil', 'DOP', 'a751c8ff-f95b-431e-b7a6-6002628b379b', 'Maminiaina RAZAKAMANANTSOA (DOP)', null, null, null);
@@ -912,7 +932,7 @@ INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, Su
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '8def912e-31c7-4f6d-b7cc-ec5076020ad1', '00420', 'Vaniala RAKOTOARIVONY (DAF)', 'vaniala.rakotoarivony@ravinala-airports.aero', 'Contrôleur Interne', 'DAF', '05ae1fb5-5671-4b93-b1f8-df82ae855300', 'Dina Mickaël RAJOHNSON (DAF)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '8e8c09f3-9bd4-4a4f-8c4e-20513920a7be', '00110', 'N. Tahiriniaina MAMPIONONA (DAF)', 'tahiriniaina.mampionona@ravinala-airports.aero', 'Agent Saisie facturation', 'DAF', '7a1865b2-fae2-41f0-b045-1db2c4d80727', 'Herimboahary Dinarisoa ANDRIANTOLOTIANA RAVONIRINA (DAF)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '906d7b48-5689-4b72-95bc-304f42a66c93', '00372', 'Martial Guy ESSOMBA (DOP)', 'martial.essomba@ravinala-airports.aero', 'Ingénieur Exploitation', 'DOP', '814543aa-3dff-4ab9-a822-15fac34e3ba1', 'Caroline PETIT (DOP)', null, null, null);
-INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '90be815e-9c3e-4693-b10c-342e16a1553a', 'ST131', 'Mibaliaka Mahaliana RAZAFINDRAGOLO (DAF)', 'mahaliana.razafindragolo@ravinala-airports.aero', 'Stagiaire en Contrôle Financier', 'DAF', '5f0151c4-c2f9-47f0-9fba-3ef1432f9723', 'Linda Lai FIDIMANANTSOA (DAF)', null, null, null);
+-- -- INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '90be815e-9c3e-4693-b10c-342e16a1553a', 'ST131', 'Mibaliaka Mahaliana RAZAFINDRAGOLO (DAF)', 'mahaliana.razafindragolo@ravinala-airports.aero', 'Stagiaire en Contrôle Financier', 'DAF', '5f0151c4-c2f9-47f0-9fba-3ef1432f9723', 'Linda Lai FIDIMANANTSOA (DAF)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '90c684e0-566a-4b9d-98fe-e236a9da3ee7', 'ST160', 'Vahatra RAKOTONIAINA (DQRSE)', 'vahatra.rakotoniaina@ravinala-airports.aero', 'Stagiaire DQRSE', 'DQRSE', '8334829e-08b6-4a3e-adc6-e2b6ccaf19a0', 'Nina RATSARASATA (DQRSE)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '95b56bd7-a03d-4e48-aefe-68a53abbc70a', '00457', 'Aina Loïc RASON (DGE)', 'aina.rason@ravinala-airports.aero', 'Chargé Communication Digitale', 'COM', '528ab1c6-721e-4c57-bbb6-abe275754263', 'Sandrine RAHANTAMALALA (DGE)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '95e7be5c-5e0d-4e39-9daf-84acf0395c39', '00407', 'Christian RAJAONARIVONY (DCM)', 'christian.rajaonarivony@ravinala-airports.aero', 'Contrôleur Fret', 'DCM', '7e56abd1-af10-4ce0-be7f-33e8c9bfaceb', 'Herimalala Naly ANDRIAMIHAJA (DCM)', null, null, null);
@@ -928,7 +948,7 @@ INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, Su
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( '9ff3d2d3-d79c-4c1b-bea4-8260e127a0a7', '00460', 'Hasina RASAMOELINA (DQRSE)', 'hasina.rasamoelina@ravinala-airports.aero', 'Responsable Qualité et Gestion des Risques', 'DQRSE', '0cb6e51a-302f-4d79-8a9c-0fbcd0ea62da', 'Felana RATSIMBAZAFY (DQRSE)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'a0da4c56-c9d4-468b-af02-774480b1937e', 'ST125', 'Ismael ALEXANDRE (DOP)', 'ismael.alexandre@ravinala-airports.aero', 'Stagiaire', 'DOP', '6f76bda1-28b9-4666-8c7e-56d176dea46c', 'Miary RASAMOELY (DOP)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'a1123b0c-acbd-4c86-b0a4-ac7989d1eb06', 'ST132', 'Salohy RAKOTONDRAZANANY (DCM)', 'salohy.rakotondrazanany@ravinala-airports.aero', 'Stagiaire Marketing', 'DCM', 'b528a814-3f62-475a-a626-0f245c943762', 'Hanitra Nadia ANDRIAMASINORO (DCM)', null, null, null);
-INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'a13b7477-dee0-4e1a-8f6f-17e1a6bd045c', 'ST153', 'Vonjy RANDRIANARIFIDY (DRH)', 'vonjy.randrianarifidy@ravinala-airports.aero', 'Stagiaire DRH', 'DRH', 'fbb54cbc-17ca-4708-827d-33ddc9a8defd', 'Vatosoa Maminiaina RAJAOFERA (DRH)', null, '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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/2Q==', 0);
+-- -- -- INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'a13b7477-dee0-4e1a-8f6f-17e1a6bd045c', 'ST153', 'Vonjy RANDRIANARIFIDY (DRH)', 'vonjy.randrianarifidy@ravinala-airports.aero', 'Stagiaire DRH', 'DRH', 'fbb54cbc-17ca-4708-827d-33ddc9a8defd', 'Vatosoa Maminiaina RAJAOFERA (DRH)', null, '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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/2Q==', 0);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'a13c9d78-366b-420d-9134-62b467d09313', '00350', 'Fanirisoa Narindra ANDRIAMAHOLY (DT)', 'fanirisoa.andriamaholy@ravinala-airports.aero', 'Responsable Etudes', 'DT', '795790a4-02f8-4c36-a80e-eb66eb184097', 'Natolotra RAJOELINA (DT)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'a1f1d2ad-0eaa-4bea-99dd-4e666902cd73', '00313', 'Rija Masinisa NARIZAFY (DT)', 'rija.narizafy@ravinala-airports.aero', 'Chef de Service CVC et Plomberie', 'DT', '00b58219-2f52-470d-b48f-383c8fd9ba23', 'Andry Lova Tiana RAJERISON RASAONA (DT)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'a650643d-a634-4f4a-ad58-675bfbb61d56', '00291', 'Andry Henintsoa RAKOTOARIMANANA (DSI)', 'andry.rakotoarimanana@ravinala-airports.aero', 'Administrateur Systèmes', 'DSI', '83dc05fd-0e42-43f5-b0e0-1567df7647b1', 'Vonjimampianina RAKOTOARISOA (DSI)', null, null, null);
@@ -973,7 +993,7 @@ INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, Su
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'd654aee9-bf86-48e3-b0fe-ea8139108874', 'ST140', 'ST140', 'dinasoa.randriamiadana@ravinala-airports.aero', 'Stagiaire RSE', '', '534dccca-14c9-4f41-beb9-ec7d88da7f86', 'Nomena RAVELOJAON (DQRSE)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'd6b6d0e3-d691-4cd3-bed4-da651a4aba9d', 'ST144', 'Kanto Miharintsoa RANDRIAMAMPIANINA (DSI)', 'kanto.randriamampianina@ravinala-airports.aero', 'Stagiaire DSI', 'DSI', 'ba5d519e-3b23-4201-a6a6-1d3760f6b214', 'Damien ANDRIATSILAVINA (DSI)', null, null, 1);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'da53f46a-8c46-4d0d-b61b-e6bdb663a9d6', '00200', 'Ravakiniaina Esperance RANDRIAMIHARISOA (DOP)', 'ravakiniaina.randriamiharisoa@ravinala-airports.aero', 'Agente Slot AOCC', 'DOP', '4c8cfbd5-435e-423b-bdf8-78d95000899e', 'Mamitiana RABARIJAONA (DOP)', null, null, null);
-INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'db805c79-6ff8-45eb-97b2-f6825775f72f', '00446', 'Christelle RAKOTOMAVO (DSI)', 'christelle.rakotomavo@ravinala-airports.aero', 'Cheffe de Projet SI et Innovation', 'DSI', 'ba5d519e-3b23-4201-a6a6-1d3760f6b214', 'Damien ANDRIATSILAVINA (DSI)', null, '/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCAAjAFkDASIAAhEBAxEB/8QAGwABAAIDAQEAAAAAAAAAAAAAAAUGAwQHAQL/xAAtEAABAwQBAQcDBQEAAAAAAAABAgMEAAUGESESEzEyQVGBkQcVIiMkQmFxof/EABQBAQAAAAAAAAAAAAAAAAAAAAD/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwDs1KUoFKVilSWYcV2VJcS0yygrcWo8JSBsmgpn1OlyH7Wxj8J4tO3IOLeWk8oYaQVr+dBPua2bTmVnteM4+i9XRDUuXBYVpfUonaUjqUQD0gk950KjIwVPtOQ5xcUrbRLgOtwG197URKSQdeRWfy+K8xbEY0b6ZyHpn7iZdbWC86vkpR2X6aB6BKde43QdDpXMrBjFzzDDYt2u16lpnrjD7elh0ttxikaQsgeJRI2SfXVXTFLyq+4/HlvJ7OUjbMps/wAHkHpWPkH2IoJmlKUClKUEffLzGsFqcuUxKzHaWhLhQPCFLCer/BvZ/qt8EEbHcai8ns/3/GbhagoJVKYUhCj3BXekn3ArSxLJod5tMdl19DNzYQGpcRxQDrbieFbSedb7jQWKqZkshWT31nD4auqKnT94dQfA2DtLW/VZHPnqtnJcne7cY/jhTJvUkdPUn8kQk+bjh51ryB7zUpjmPRcctgiMEuurPaSZK+VyHD4lqPmSfig+79GgPY3Ohz30RILsZbTjpUEhtJGt7PA1uq4xnOJNWhu2NzJr8ZEcRw+3BeUFJCenewjR49OKn7tjNvvk6O/c+0ksxtFuItX6PXvxqT/I+XOx/VSyUhKQlIAAGgB3CgpVkzXDrLbIdobuMhhiO2GmnZsZ1oLA9VKSBv4rax+VjqcjnuWfJosgXFXbLt7b7agHeApxOudkDkevNWh9hmSypmQ0h1tXCkOJCkn/AEGo5WL2BSmV/ZYIVHcDjSkx0pKFA7BBA9aCVpSlApSlAqHvWJWDIiFXa1R5KxwHSOlwD0606V/2lKDPZsftOPRTGtEBqI0o7UEDlR9STyfepGlKBSlKBSlKBSlKBSlKD//Z', 0);
+-- -- -- -- -- INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'db805c79-6ff8-45eb-97b2-f6825775f72f', '00446', 'Christelle RAKOTOMAVO (DSI)', 'christelle.rakotomavo@ravinala-airports.aero', 'Cheffe de Projet SI et Innovation', 'DSI', 'ba5d519e-3b23-4201-a6a6-1d3760f6b214', 'Damien ANDRIATSILAVINA (DSI)', null, '/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCAAjAFkDASIAAhEBAxEB/8QAGwABAAIDAQEAAAAAAAAAAAAAAAUGAwQHAQL/xAAtEAABAwQBAQcDBQEAAAAAAAABAgMEAAUGESESEzEyQVGBkQcVIiMkQmFxof/EABQBAQAAAAAAAAAAAAAAAAAAAAD/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwDs1KUoFKVilSWYcV2VJcS0yygrcWo8JSBsmgpn1OlyH7Wxj8J4tO3IOLeWk8oYaQVr+dBPua2bTmVnteM4+i9XRDUuXBYVpfUonaUjqUQD0gk950KjIwVPtOQ5xcUrbRLgOtwG197URKSQdeRWfy+K8xbEY0b6ZyHpn7iZdbWC86vkpR2X6aB6BKde43QdDpXMrBjFzzDDYt2u16lpnrjD7elh0ttxikaQsgeJRI2SfXVXTFLyq+4/HlvJ7OUjbMps/wAHkHpWPkH2IoJmlKUClKUEffLzGsFqcuUxKzHaWhLhQPCFLCer/BvZ/qt8EEbHcai8ns/3/GbhagoJVKYUhCj3BXekn3ArSxLJod5tMdl19DNzYQGpcRxQDrbieFbSedb7jQWKqZkshWT31nD4auqKnT94dQfA2DtLW/VZHPnqtnJcne7cY/jhTJvUkdPUn8kQk+bjh51ryB7zUpjmPRcctgiMEuurPaSZK+VyHD4lqPmSfig+79GgPY3Ohz30RILsZbTjpUEhtJGt7PA1uq4xnOJNWhu2NzJr8ZEcRw+3BeUFJCenewjR49OKn7tjNvvk6O/c+0ksxtFuItX6PXvxqT/I+XOx/VSyUhKQlIAAGgB3CgpVkzXDrLbIdobuMhhiO2GmnZsZ1oLA9VKSBv4rax+VjqcjnuWfJosgXFXbLt7b7agHeApxOudkDkevNWh9hmSypmQ0h1tXCkOJCkn/AEGo5WL2BSmV/ZYIVHcDjSkx0pKFA7BBA9aCVpSlApSlAqHvWJWDIiFXa1R5KxwHSOlwD0606V/2lKDPZsftOPRTGtEBqI0o7UEDlR9STyfepGlKBSlKBSlKBSlKBSlKD//Z', 0);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'deabea11-e58c-4398-9a6b-48375f16e527', '00106', 'Hina Soaniaina RAJAONARIVONY (DOP)', 'hina.rajaonarivony@ravinala-airports.aero', 'Agent d’accueil', 'DOP', '30f2fa8a-f859-43c4-a06b-e9317c76c367', 'Rabemanantsoa Caroline RAMILIJAONA (DOP)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'dffac12b-aaf3-44ae-9ca9-32331b07cf36', 'yrabeariveloarisoa', 'Yohan RABEARIVELOARISOA', 'yrabeariveloarisoa@groupe-sra.fr', '', '', null, null, null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'e1654e34-5e16-407e-9de4-aaaa5342bc40', '00063', 'Ericka Marius ANDRIANANTONISOLO (DOP)', 'marius.andrianantonisolo@ravinala-airports.aero', 'Agent de piste', 'DOP', '5137249d-9e50-48f2-b598-19d2ba48e41f', 'Nirina Marius RAZAFIMAHATRATRA (DOP)', null, null, null);
@@ -1003,7 +1023,7 @@ INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, Su
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'f904830e-8cf9-41ae-8520-66ec41ce7b31', '00036', 'RAZALINE (DOP)', 'razaline@ravinala-airports.aero', 'Responsable d''Exploitation de Permanence', 'DOP', '6f76bda1-28b9-4666-8c7e-56d176dea46c', 'Miary RASAMOELY (DOP)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'f9f54d9b-6aef-45d8-9343-a7a8258b9a43', '00197', 'Fetrarinosy Aurélia NAMELANATOANDRO (DOP)', 'aurelia.namelanatoandro@ravinala-airports.aero', 'Agent d’accueil', 'DOP', '30f2fa8a-f859-43c4-a06b-e9317c76c367', 'Rabemanantsoa Caroline RAMILIJAONA (DOP)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'fa4f28e4-6efe-428a-ac80-ad54716e75b5', '00006', 'Mamy Lala RAKOTOZAFY (DAF)', 'mamy.rakotozafy@ravinala-airports.aero', 'Assistante de Direction', 'DAF', '11715a63-e237-46b3-b568-ffa6fc087000', 'Romain PIERRU (DAF)', null, null, 1);
-INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'fbb54cbc-17ca-4708-827d-33ddc9a8defd', '00399', 'Vatosoa Maminiaina RAJAOFERA (DRH)', 'vatosoa.rajaofera@ravinala-airports.aero', 'Responsable Compétence et Performances', 'DRH', '76c25f37-2089-4e81-8329-1b63d880b71a', 'Herinomenjanaharilala Sedera RASOLOFONDRAMANAMBE (DRH)', null, '/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCAHCAyADASIAAhEBAxEB/8QAGwABAQADAQEBAAAAAAAAAAAAAAYEBQcBAgP/xAA/EAEAAQMDAQMHCAYLAAAAAAAAAQIDBAUGEQcSITETFEFRYXGRIiMydYGhwcIVFiQ2Q5JSU1RiZHKCorHR8P/EABQBAQAAAAAAAAAAAAAAAAAAAAD/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwDswAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMHM1rTtP1DC0/KyqLWTn1VU49ueebk0xzPu+0GcAA0G5N6aJtS7iWtVyKrdeXVMUU0UdriI4iap9Ud8N7VVTRRNdUxFNMczM+iEBsPSLG5bGVu/WrXnl7VK7lGPayPl0WcaK+Ioime7xp/9zIOgRMVRExPMT3xL15EREcRHEQ9AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcX6p1XbfUWzm0XKor0zTrGVa7+6mrzqKZn4S7Q471PtTe3XrcU/So2zRXH+nLon8AdgpqiqiKo8Jjl9MbTrsXtNxbseFdmir4xDJBqd1ZE4u0tXv0zxVRhXppn1T2J4Yuw7EY2xNFtRHHGHbmffMcz/y/PqHd8j0/wBbr/wlUfHu/FstuWvIbZ0u1xx2MO1E/wAkA2QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANHvDcEbZ2zlalEU136YijHt1d/lLtU8Uxx6e/v8AdEpavZ17T9i7j1DVb3n2ualg3bl+9NPE0cUdqLVPj3RMejx7vVDP3rRGZvTZmnVR2qLmZeyJpnwnyVuKvxWd23TetV2q45orpmmqPXEg1W0cmnL2do1+mqKu3g2eZifT2I5j48twiel9yrE0fP29eq+f0XOu2OzP9XM9qir3TzPwWwJDqtc8l011ifTVRbpj7blEfiqsa15DFtWY/h0RT8I4SHVSe3tjFw/7bqWNY49fNfP5VoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACK1yrzzq1tjGtd9en4uXlXvZRcp8nT/uhaojb8fpDqrubOnvpwrGPh0T74muqPjC3BD4MfovrHqNifk29X023kUeqqu3PZmPfxzK4RG9v2PeGztTju7GbcxqqvZco44+5bgieo/zmVtXH/p65Zr4/wAsVf8Aa2RW+453Hs760/KtQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHng9a/X8+nS9vajn1T3Y2Lcue+YpmYgE10xnzrTtZ1We+dQ1jIuxV/ciYimPdHErVM9OdPq03YGkWa/p3LEX6ufHm5M1/mUwI7qlj11bNr1GzHORpOTazbXvoqiJ+6ZVmLk28zEs5Vmebd63Tcon1xMcw1+58GvUtraphWqO3cv4lyiimPTV2Z4j4sHp/nW9R2JpF63X2uzjU2q/ZVR8mY+MA1u+v3k2d9aflWqJ3l8/vjZmJHjOXevfyW+VsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAjeql6v9TKsC1M+V1PKs4dER4zNVUTx8IlZIjX5nWep2gaRT8qzplqvUr8eiKvo2+fbE9/2gssaxTi4trHojim1RTRTEeqI4fqACE2/NW0t95227sfsWsV15+n1x3RTV/Et8ff9ntXaJ6o2pxdCxNwWI7OVo2Zav0Vx49iaoprp908xz7gfWfHnnWPSrM98afpN7Jj2TXX5NaIjTb1Ob1gz8iiqKqLei2aaZieY4qr7S3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARGyY843lvLNu/KvxnUWIqn0UUU8UxC3ROw/3k3l9aflBbAAMbUMO1qOnZGFeoprt5Fqq3VTXHMTExx4MkBy3pHomraVrGuUarj3aKsWm3iW7tdNUU3aaJq76ZnxjiI8PRw6kAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADQaFty7ouv67nxlU3MfVb1F+i12eKrdURMVcz6eZ44b8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//2Q==', 0);
+-- -- INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'fbb54cbc-17ca-4708-827d-33ddc9a8defd', '00399', 'Vatosoa Maminiaina RAJAOFERA (DRH)', 'vatosoa.rajaofera@ravinala-airports.aero', 'Responsable Compétence et Performances', 'DRH', '76c25f37-2089-4e81-8329-1b63d880b71a', 'Herinomenjanaharilala Sedera RASOLOFONDRAMANAMBE (DRH)', null, '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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADQaFty7ouv67nxlU3MfVb1F+i12eKrdURMVcz6eZ44b8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//2Q==', 0);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'fe2c0567-d7ae-4db2-8b2c-27ee4f203e5b', '00122', 'Hervé Nirina ANDRIANASOLO (DOP)', 'herve.andrianasolo@ravinala-airports.aero', 'Conducteur de Passerelle', 'DOP', '30f2fa8a-f859-43c4-a06b-e9317c76c367', 'Rabemanantsoa Caroline RAMILIJAONA (DOP)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'fe889786-fc4d-413c-aa08-b2296cd85249', '00195', 'Michou RAKOTONDRAMAZAVA (DAF)', 'michou.rakotondramazava@ravinala-airports.aero', 'Contrôleuse de Crédit et Facturation', 'DAF', '7a1865b2-fae2-41f0-b045-1db2c4d80727', 'Herimboahary Dinarisoa ANDRIANTOLOTIANA RAVONIRINA (DAF)', null, null, null);
 INSERT INTO Users( Id, Matricule, Name, Email, Poste, Department, SuperiorId, SuperiorName, Status, Signature, TypeUser ) VALUES ( 'ff0ef660-c516-4338-9319-2e1f22d8be26', 'AG007', 'Mamy Tiana RAKOTOARINORO (DOP)', 'mamy.rakotoarinoro@ravinala-airports.aero', 'Agent d’accueil', 'DOP', 'f904830e-8cf9-41ae-8520-66ec41ce7b31', 'RAZALINE (DOP)', null, null, null);
@@ -1057,25 +1077,27 @@ INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 10, 'M
 INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 11, 'Consulter les périodes d''évaluation', 4, 1);
 INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 12, 'Créer une nouvelle période d''évaluation', 4, 1);
 INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 13, 'Modifier une période d''évaluation', 4, 1);
-INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 14, 'Consulter les subordonnés', 5, 1);
+INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 14, 'Consulter les collaborateurs', 5, 1);
 INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 15, 'Remplir ses formulaires d''évaluation pour un cadre', 5, 1);
-INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 16, 'Remplir les formulaires d''évaluation pour ses subordonnés cadres', 5, 1);
+INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 16, 'Remplir les formulaires d''évaluation pour ses collaborateurs cadres', 5, 1);
 INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 17, 'Consulter les formulaires en cours des collaborateurs cadres', 5, 1);
-INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 18, 'Consulter les formulaires en cours des subordonnés cadres', 5, 1);
+INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 18, 'Consulter les formulaires en cours des collaborateurs cadres', 5, 1);
 INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 19, 'Remplir ses formulaires d''évaluation pour un non-cadre', 5, 1);
-INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 20, 'Remplir les formulaires d''évaluation pour ses subordonnés non-cadres', 5, 1);
+INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 20, 'Remplir les formulaires d''évaluation pour ses collaborateurs non-cadres', 5, 1);
 INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 21, 'Consulter les formulaires en cours des collaborateurs non-cadres', 5, 1);
-INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 22, 'Consulter les formulaires en cours des subordonnés non-cadres', 5, 1);
+INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 22, 'Consulter les formulaires en cours des collaborateurs non-cadres', 5, 1);
 INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 23, 'Consulter ses archives personnelles', 6, 1);
 INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 24, 'Consulter les archives de tous les collaborateurs', 6, 1);
 INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 25, 'Modifier les fiches archivées de tous les collaborateurs', 6, 1);
-INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 26, 'Consulter les archives des subordonnés', 6, 1);
+INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 26, 'Consulter les archives des collaborateurs', 6, 1);
 INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 27, 'Importer les évaluations', 7, 1);
 INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 28, 'Exporter les évaluations', 8, 1);
 INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 29, 'Recevoir une notification au début et à la clôture d''une évaluation.', 9, 1);
 INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 30, 'Recevoir des notifications de validation pendant l''évaluation.', 9, 1);
 INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 31, 'Voir le tableau de bord en tant qu’administrateur.', 10, 1);
 INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 32, 'Voir le tableau de bord en tant que collaborateur.', 10, 1);
+INSERT INTO HabilitationAdmins( Id, Name, SectionId, IsGranted ) VALUES ( 33, 'Voir la liste des logs.', 11, 1);
+
 SET IDENTITY_INSERT HabilitationAdmins OFF;
 
 INSERT INTO HabilitationHabilitationAdmin( HabilitationAdminsId, HabilitationsId ) VALUES ( 1, 1);
@@ -1192,7 +1214,15 @@ INSERT INTO UserHabilitations( HabilitationsId, UsersId ) VALUES ( 1001, 'fbb54c
 INSERT INTO UserHabilitations( HabilitationsId, UsersId ) VALUES ( 1, 'ce796eb6-0f7e-4dbc-9c1e-de00f53de186');
 INSERT INTO UserHabilitations( HabilitationsId, UsersId ) VALUES ( 2, 'ce796eb6-0f7e-4dbc-9c1e-de00f53de186');
 INSERT INTO UserHabilitations( HabilitationsId, UsersId ) VALUES ( 4, 'ce796eb6-0f7e-4dbc-9c1e-de00f53de186');
-INSERT INTO UserHabilitations( HabilitationsId, UsersId ) VALUES ( 1001, 'ce796eb6-0f7e-4dbc-9c1e-de00f53de186');
+INSERT INTO UserHabilitations( HabilitationsId, UsersId ) VALUES ( 3, 'ce796eb6-0f7e-4dbc-9c1e-de00f53de186');
+INSERT INTO UserHabilitations( HabilitationsId, UsersId ) VALUES ( 1, 'd6b6d0e3-d691-4cd3-bed4-da651a4aba9d');
+INSERT INTO UserHabilitations( HabilitationsId, UsersId ) VALUES ( 2, 'd6b6d0e3-d691-4cd3-bed4-da651a4aba9d');
+INSERT INTO UserHabilitations( HabilitationsId, UsersId ) VALUES ( 4, 'd6b6d0e3-d691-4cd3-bed4-da651a4aba9d');
+INSERT INTO UserHabilitations( HabilitationsId, UsersId ) VALUES ( 3, 'd6b6d0e3-d691-4cd3-bed4-da651a4aba9d');
+
+
+
+
 
 
 
@@ -1287,7 +1317,7 @@ INSERT INTO CompetenceLevels( CompetenceLevelId, CompetenceId, LevelId, Descript
 INSERT INTO CompetenceLevels( CompetenceLevelId, CompetenceId, LevelId, Description ) VALUES ( 37, 8, 2, 'Contrôle peu les résultats de son action.');
 INSERT INTO CompetenceLevels( CompetenceLevelId, CompetenceId, LevelId, Description ) VALUES ( 38, 8, 3, 'Vérifie bien ses résultats.');
 INSERT INTO CompetenceLevels( CompetenceLevelId, CompetenceId, LevelId, Description ) VALUES ( 39, 8, 4, 'Sait bien contrôler son travail et apporter les corrections nécessaires.');
-INSERT INTO CompetenceLevels( CompetenceLevelId, CompetenceId, LevelId, Description ) VALUES ( 40, 8, 5, 'Contrôle continuellement l''avancement et la qualité de ses travaux. A le goût de la perfection.');
+-- INSERT INTO CompetenceLevels( CompetenceLevelId, CompetenceId, LevelId, Description ) VALUES ( 40, 8, 5, 'Contrôle continuellement l''avancement et la qualité de ses travaux. A le goût de la perfection.');
 SET IDENTITY_INSERT CompetenceLevels OFF;
 
 SET IDENTITY_INSERT HistoryCFis ON;
@@ -1336,7 +1366,7 @@ INSERT INTO HistoryCFis( HcfiId, UserEvalId, PriorityName, Description, Weightin
 INSERT INTO HistoryCFis( HcfiId, UserEvalId, PriorityName, Description, Weighting, ResultIndicator, Result, ValidatedBy, UpdatedAt ) VALUES ( 2028, 2011, 'Performance Financière', 'Réduction des OPEX de 5% sans impacter sans compromission sur la qualité des interventions ', 30, 'atteint si : écart budgétaire entre prévisions et dépenses réelles > 5%', 80, null, '2025-07-22 02:58:16 PM');
 INSERT INTO HistoryCFis( HcfiId, UserEvalId, PriorityName, Description, Weighting, ResultIndicator, Result, ValidatedBy, UpdatedAt ) VALUES ( 2029, 2011, 'Responsabilité Sociétale d''Entreprise', 'Réduction de la consommation énergetique des infrastructures en KWh', 20, 'atteint si écart de 3% entre les consommations énergetique du 2024 et 2025 pour les deux sites ( TNR et NOS)', 80, null, '2025-07-22 02:58:16 PM');
 INSERT INTO HistoryCFis( HcfiId, UserEvalId, PriorityName, Description, Weighting, ResultIndicator, Result, ValidatedBy, UpdatedAt ) VALUES ( 2030, 2012, 'Robustesse Opérationnelle', 'Assurer la conformité par rapport au Code du Travail ', 25, 'Atteint si :\r\n- 100% des des dispositions du RI et de la Convention Collective sont communiquées et expliquées aux employés dans les 1ers et 4èmes mercredis du mois jusqu''au 31/12/2025 (supports de présentation à mettre dans le serveur)\r\n- DUER et PAP jusqu''au 31/06/2025 (descentes sur terrain pour la collecte des données, analyses et appui à Nina pour la mise à jour des existants)', 80, null, '2025-07-22 02:58:16 PM');
-INSERT INTO HistoryCFis( HcfiId, UserEvalId, PriorityName, Description, Weighting, ResultIndicator, Result, ValidatedBy, UpdatedAt ) VALUES ( 2031, 2012, 'Robustesse Opérationnelle', 'Digitaliser les process RH', 20, 'Atteint si :\r\n- 100% des test réalisés pour un go live au 31/12/2025', 80, null, '2025-07-22 02:58:16 PM');
+-- INSERT INTO HistoryCFis( HcfiId, UserEvalId, PriorityName, Description, Weighting, ResultIndicator, Result, ValidatedBy, UpdatedAt ) VALUES ( 2031, 2012, 'Robustesse Opérationnelle', 'Digitaliser les process RH', 20, 'Atteint si :\r\n- 100% des test réalisés pour un go live au 31/12/2025', 80, null, '2025-07-22 02:58:16 PM');
 INSERT INTO HistoryCFis( HcfiId, UserEvalId, PriorityName, Description, Weighting, ResultIndicator, Result, ValidatedBy, UpdatedAt ) VALUES ( 2032, 2012, 'Robustesse Opérationnelle', 'Gérer efficacement la partie administrative de ses activités', 10, 'Atteint si :\r\n100% des données relatives au volet social sont disponibles, exploitables et analysées jusqu''au 31/12/2025', 80, null, '2025-07-22 02:58:16 PM');
 INSERT INTO HistoryCFis( HcfiId, UserEvalId, PriorityName, Description, Weighting, ResultIndicator, Result, ValidatedBy, UpdatedAt ) VALUES ( 2033, 2012, 'Robustesse Opérationnelle', 'Développement de partenariat corporate', 5, 'Atteint si :\r\n3 partenariats contractualisés jusqu''au 31/12/2025', 80, null, '2025-07-22 02:58:16 PM');
 INSERT INTO HistoryCFis( HcfiId, UserEvalId, PriorityName, Description, Weighting, ResultIndicator, Result, ValidatedBy, UpdatedAt ) VALUES ( 2034, 2012, 'Performance Financière', 'Maîtriser les OPEX de la DRH par rapport à la version validé', 20, 'Atteint si :\r\nAu moins 3 proforma pour chaque activité RH confiée font l''objet de comparatif jusqu''au 31/12/2025 (powerpoint) : comparatifs et propositions, respect des délais d''achat', 80, null, '2025-07-22 02:58:16 PM');
@@ -1454,7 +1484,7 @@ INSERT INTO HistoryCMps( HcmId, UserEvalId, PriorityName, Description, Weighting
 INSERT INTO HistoryCMps( HcmId, UserEvalId, PriorityName, Description, Weighting, ResultIndicator, Result, ValidatedBy, UpdatedAt ) VALUES ( 1036, 2011, 'Performance Financière', 'Réduction des OPEX de 5% sans impacter sans compromission sur la qualité des interventions ', 30, 'atteint si : écart budgétaire entre prévisions et dépenses réelles > 5%', 50, null, '2025-07-22 02:39:15 PM');
 INSERT INTO HistoryCMps( HcmId, UserEvalId, PriorityName, Description, Weighting, ResultIndicator, Result, ValidatedBy, UpdatedAt ) VALUES ( 1037, 2011, 'Responsabilité Sociétale d''Entreprise', 'Réduction de la consommation énergetique des infrastructures en KWh', 20, 'atteint si écart de 3% entre les consommations énergetique du 2024 et 2025 pour les deux sites ( TNR et NOS)', 50, null, '2025-07-22 02:39:15 PM');
 INSERT INTO HistoryCMps( HcmId, UserEvalId, PriorityName, Description, Weighting, ResultIndicator, Result, ValidatedBy, UpdatedAt ) VALUES ( 1038, 2012, 'Robustesse Opérationnelle', 'Assurer la conformité par rapport au Code du Travail ', 25, 'Atteint si :\r\n- 100% des des dispositions du RI et de la Convention Collective sont communiquées et expliquées aux employés dans les 1ers et 4èmes mercredis du mois jusqu''au 31/12/2025 (supports de présentation à mettre dans le serveur)\r\n- DUER et PAP jusqu''au 31/06/2025 (descentes sur terrain pour la collecte des données, analyses et appui à Nina pour la mise à jour des existants)', 50, null, '2025-07-22 02:39:15 PM');
-INSERT INTO HistoryCMps( HcmId, UserEvalId, PriorityName, Description, Weighting, ResultIndicator, Result, ValidatedBy, UpdatedAt ) VALUES ( 1039, 2012, 'Robustesse Opérationnelle', 'Digitaliser les process RH', 20, 'Atteint si :\r\n- 100% des test réalisés pour un go live au 31/12/2025', 50, null, '2025-07-22 02:39:15 PM');
+-- INSERT INTO HistoryCMps( HcmId, UserEvalId, PriorityName, Description, Weighting, ResultIndicator, Result, ValidatedBy, UpdatedAt ) VALUES ( 1039, 2012, 'Robustesse Opérationnelle', 'Digitaliser les process RH', 20, 'Atteint si :\r\n- 100% des test réalisés pour un go live au 31/12/2025', 50, null, '2025-07-22 02:39:15 PM');
 INSERT INTO HistoryCMps( HcmId, UserEvalId, PriorityName, Description, Weighting, ResultIndicator, Result, ValidatedBy, UpdatedAt ) VALUES ( 1040, 2012, 'Robustesse Opérationnelle', 'Gérer efficacement la partie administrative de ses activités', 10, 'Atteint si :\r\n100% des données relatives au volet social sont disponibles, exploitables et analysées jusqu''au 31/12/2025', 50, null, '2025-07-22 02:39:15 PM');
 INSERT INTO HistoryCMps( HcmId, UserEvalId, PriorityName, Description, Weighting, ResultIndicator, Result, ValidatedBy, UpdatedAt ) VALUES ( 1041, 2012, 'Robustesse Opérationnelle', 'Développement de partenariat corporate', 5, 'Atteint si :\r\n3 partenariats contractualisés jusqu''au 31/12/2025', 50, null, '2025-07-22 02:39:15 PM');
 INSERT INTO HistoryCMps( HcmId, UserEvalId, PriorityName, Description, Weighting, ResultIndicator, Result, ValidatedBy, UpdatedAt ) VALUES ( 1042, 2012, 'Performance Financière', 'Maîtriser les OPEX de la DRH par rapport à la version validé', 20, 'Atteint si :\r\nAu moins 3 proforma pour chaque activité RH confiée font l''objet de comparatif jusqu''au 31/12/2025 (powerpoint) : comparatifs et propositions, respect des délais d''achat', 50, null, '2025-07-22 02:39:15 PM');
@@ -1482,4 +1512,9 @@ INSERT INTO HistoryCMps( HcmId, UserEvalId, PriorityName, Description, Weighting
 INSERT INTO HistoryCMps( HcmId, UserEvalId, PriorityName, Description, Weighting, ResultIndicator, Result, ValidatedBy, UpdatedAt ) VALUES ( 1064, 2015, 'Performance Financière', 'Objectif 1 - Optimiser le budget Marketing 2025', 20, 'Respect du Budget  Marketing  2025', 50, null, '2025-07-22 02:39:15 PM');
 INSERT INTO HistoryCMps( HcmId, UserEvalId, PriorityName, Description, Weighting, ResultIndicator, Result, ValidatedBy, UpdatedAt ) VALUES ( 1065, 2015, 'Responsabilité Sociétale d''Entreprise', 'Objectif 1- Partenariats stratégiques', 15, ' - 3 nouveaux partenaires stratégiques sur le volet RSE, et volet économique ', 50, null, '2025-07-22 02:39:15 PM');
 SET IDENTITY_INSERT HistoryCMps OFF;
-GO
+-- GO
+
+-- SET IDENTITY_INSERT Indicators
+-- INSERT INTO Indicators( IndicatorId, label,MaxResults,TemplateId,IsActive  ) VALUES ( 1, 'TEST', 3 ,2, true);
+
+

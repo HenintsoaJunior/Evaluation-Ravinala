@@ -8,7 +8,12 @@ import {
     Alert,
     TextField,
     Checkbox,
-    FormControlLabel
+    FormControlLabel,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle
 } from '@mui/material';
 import AuditService from '../../../services/AuditService';
 
@@ -29,6 +34,7 @@ function RenitialisationNonCadre() {
         help: false,
         userHelpContent: false
     });
+    const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
 
     const user = JSON.parse(localStorage.getItem('user')) || {};
     const userId = user.id;
@@ -60,6 +66,13 @@ function RenitialisationNonCadre() {
         });
     };
 
+    const handleYearChange = (e) => {
+        const value = e.target.value;
+        if (value === '' || !isNaN(Number(value))) {
+            setAnnee(value === '' ? '' : Number(value));
+        }
+    };
+
     const handleSubmit = async (event) => {
         event.preventDefault();
         setIsSubmitted(true);
@@ -71,6 +84,21 @@ function RenitialisationNonCadre() {
             return;
         }
 
+        // Vérification de la validité de l'année
+        if (annee < 1900 || annee > 2100 || annee === '') {
+            setMessage('L\'année doit être comprise entre 1900 et 2100.');
+            setSeverity('error');
+            return;
+        }
+
+        // Ouvrir la boîte de dialogue de confirmation
+        setOpenConfirmDialog(true);
+    };
+
+    const handleConfirmReset = async () => {
+        // Fermer la boîte de dialogue
+        setOpenConfirmDialog(false);
+        
         setIsSubmitting(true);
         setMessage('');
 
@@ -93,7 +121,7 @@ function RenitialisationNonCadre() {
             );
 
             if (response.status === 200) {
-                setMessage('Cadres réinitialisés avec succès.');
+                setMessage('Non-cadres réinitialisés avec succès.');
                 setSeverity('success');
                 setSelectedCadres({
                     evaluation: false,
@@ -132,6 +160,28 @@ function RenitialisationNonCadre() {
         }
     };
 
+    const handleCancelReset = () => {
+        setOpenConfirmDialog(false);
+    };
+
+    // Fonction pour obtenir la liste des non-cadres sélectionnés
+    const getSelectedCadresList = () => {
+        const cadresLabels = {
+            evaluation: "Période d'évaluation",
+            fixation: "Fixation des objectifs",
+            miParcoursIndicators: "Mi-parcours",
+            miParcoursCompetence: "Indicateur de compétences en mi-Parcours",
+            finale: "Évaluation finale",
+            help: "Sujets d'aide au développement du collaborateur",
+            userHelpContent: "Contenus des sujets"
+        };
+
+        return Object.entries(selectedCadres)
+            .filter(([key, value]) => value)
+            .map(([key]) => cadresLabels[key])
+            .join(', ');
+    };
+
     return (
         <Box sx={{ mx: 'auto', maxWidth: '800px', p: 3 }}>
             <Typography variant="h5" gutterBottom>
@@ -143,8 +193,11 @@ function RenitialisationNonCadre() {
                         label="Année"
                         type="number"
                         value={annee}
-                        onChange={(e) => setAnnee(e.target.value)}
+                        onChange={handleYearChange}
                         fullWidth
+                        error={isSubmitted && (annee < 1900 || annee > 2100 || annee === '')}
+                        helperText={isSubmitted && (annee < 1900 || annee > 2100 || annee === '') ?
+                            'L\'année doit être comprise entre 1900 et 2100.' : ''}
                     />
                 </Grid>
             </Grid>
@@ -212,6 +265,44 @@ function RenitialisationNonCadre() {
                     </Grid>
                 </Grid>
             </form>
+
+            {/* Boîte de dialogue de confirmation */}
+            <Dialog
+                open={openConfirmDialog}
+                onClose={handleCancelReset}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">
+                    Confirmer la réinitialisation
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        Êtes-vous sûr de vouloir réinitialiser les non-cadres suivants pour l'année {annee} ?
+                        <br /><br />
+                        <strong>Non-cadres sélectionnés :</strong>
+                        <br />
+                        {getSelectedCadresList() || 'Aucun non-cadre sélectionné'}
+                        <br /><br />
+                        <Alert severity="warning">
+                            Cette action est irréversible et supprimera toutes les données associées à ces non-cadres.
+                        </Alert>
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCancelReset} color="primary">
+                        Annuler
+                    </Button>
+                    <Button 
+                        onClick={handleConfirmReset} 
+                        color="error" 
+                        autoFocus
+                        variant="contained"
+                    >
+                        Confirmer la réinitialisation
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }

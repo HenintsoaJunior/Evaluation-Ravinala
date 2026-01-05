@@ -8,7 +8,12 @@ import {
     Alert,
     TextField,
     Checkbox,
-    FormControlLabel
+    FormControlLabel,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle
 } from '@mui/material';
 import AuditService from '../../../services/AuditService';
 
@@ -26,6 +31,7 @@ function ReinitialisationCadre() {
         miParcours: false,
         finale: false
     });
+    const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
 
     const user = JSON.parse(localStorage.getItem('user')) || {};
     const userId = user.id;
@@ -81,6 +87,14 @@ function ReinitialisationCadre() {
             return;
         }
 
+        // Ouvrir la boîte de dialogue de confirmation au lieu de soumettre directement
+        setOpenConfirmDialog(true);
+    };
+
+    const handleConfirmReset = async () => {
+        // Fermer la boîte de dialogue
+        setOpenConfirmDialog(false);
+        
         setIsSubmitting(true);
         setMessage('');
 
@@ -137,6 +151,25 @@ function ReinitialisationCadre() {
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const handleCancelReset = () => {
+        setOpenConfirmDialog(false);
+    };
+
+    // Fonction pour obtenir la liste des cadres sélectionnés
+    const getSelectedCadresList = () => {
+        const cadresLabels = {
+            evaluation: "Période d'évaluation",
+            fixation: "Fixation des objectifs",
+            miParcours: "Mi-parcours",
+            finale: "Évaluation finale"
+        };
+
+        return Object.entries(selectedCadres)
+            .filter(([key, value]) => value)
+            .map(([key]) => cadresLabels[key])
+            .join(', ');
     };
 
     return (
@@ -219,6 +252,44 @@ function ReinitialisationCadre() {
                     </Grid>
                 </Grid>
             </form>
+
+            {/* Boîte de dialogue de confirmation */}
+            <Dialog
+                open={openConfirmDialog}
+                onClose={handleCancelReset}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">
+                    Confirmer la réinitialisation
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        Êtes-vous sûr de vouloir réinitialiser les cadres suivants pour l'année {annee} ?
+                        <br /><br />
+                        <strong>Cadres sélectionnés :</strong>
+                        <br />
+                        {getSelectedCadresList() || 'Aucun cadre sélectionné'}
+                        <br /><br />
+                        <Alert severity="warning">
+                            Cette action est irréversible et supprimera toutes les données associées à ces cadres.
+                        </Alert>
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCancelReset} color="primary">
+                        Annuler
+                    </Button>
+                    <Button 
+                        onClick={handleConfirmReset} 
+                        color="error" 
+                        autoFocus
+                        variant="contained"
+                    >
+                        Confirmer la réinitialisation
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }

@@ -23,13 +23,14 @@ import {
   Snackbar,
   Alert,
   InputAdornment,
+  LinearProgress,
   List,
   ListItem,
   ListItemText,
   ListItemAvatar,
   Avatar,
   Chip,
-  Divider // Ajout de Divider qui était utilisé mais non importé
+  Divider
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
@@ -42,15 +43,17 @@ import HistoryIcon from '@mui/icons-material/History';
 
 function CollabFo() {
   const user = JSON.parse(localStorage.getItem('user'));
-  const userType = user.typeUser;
-  const userId = user.id;
+  const userType = user?.typeUser || '';
+  const userId = user?.id || '';
 
   const [evalId, setEvalId] = useState(null);
   const [templateId, setTemplateId] = useState(null);
   const [currentPeriod, setCurrentPeriod] = useState('');
   const [evaluationYear, setEvaluationYear] = useState('2025');
   const [hasOngoingEvaluation, setHasOngoingEvaluation] = useState(false);
-  const [template, setTemplate] = useState({ templateStrategicPriorities: [] });
+  const [template, setTemplate] = useState({ 
+    templateStrategicPriorities: [] 
+  });
   const [activeStep, setActiveStep] = useState(0);
   const [userObjectives, setUserObjectives] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -85,21 +88,27 @@ function CollabFo() {
   };
 
   const getRequiredPercentage = (priority) => {
+    if (!priority) return 0;
     return parseFloat(priority.ponderation) || 0;
   };
 
   const calculateTotalWeighting = (priority) => {
-    return (priority.objectives || []).reduce((sum, obj) => {
+    if (!priority || !priority.objectives || !Array.isArray(priority.objectives)) {
+      return 0;
+    }
+    return priority.objectives.reduce((sum, obj) => {
       const weighting = parseFloat(obj.weighting) || 0;
       return sum + weighting;
     }, 0);
   };
 
   const calculateOverallTotal = () => {
+    if (!template || !template.templateStrategicPriorities || !Array.isArray(template.templateStrategicPriorities)) {
+      return 0;
+    }
     return template.templateStrategicPriorities.reduce((sum, priority) => sum + calculateTotalWeighting(priority), 0);
   };
 
-  // Fetch fonctions...
   const fetchCadreTemplateId = async () => {
     try {
       const response = await formulaireInstance.get('/Template/CadreTemplate');
@@ -133,14 +142,7 @@ function CollabFo() {
 
     try {
       const response = await formulaireInstance.get(`/Template/${templateId}`);
-      console.log('Template:', response.data.template);
       setTemplate(response.data.template || { templateStrategicPriorities: [] });
-
-      const periodResponse = await formulaireInstance.get('/Periode/periodeActel', { params: { type: 'Cadre' } });
-      if (periodResponse.data?.length > 0) {
-        setCurrentPeriod(periodResponse.data[0].currentPeriod);
-        setEvaluationYear(periodResponse.data[0].year || '2025');
-      }
     } catch (error) {
       console.error('Erreur lors de la récupération du Template:', error);
       setErrorMessage('Erreur lors de la récupération du modèle de formulaire.');
@@ -181,8 +183,14 @@ function CollabFo() {
           if (objectives && objectives.length > 0) {
             setUserObjectives(objectives);
             setTemplate((prevTemplate) => {
-              const updatedPriorities = prevTemplate.templateStrategicPriorities.map((priority) => {
-                const priorityObjectives = objectives.filter((obj) => obj.templateStrategicPriority.name === priority.name);
+              const currentPriorities = prevTemplate?.templateStrategicPriorities || [];
+              
+              const updatedPriorities = currentPriorities.map((priority) => {
+                if (!priority) return priority;
+                
+                const priorityObjectives = objectives.filter((obj) => 
+                  obj.templateStrategicPriority?.name === priority.name
+                );
 
                 return {
                   ...priority,
@@ -219,8 +227,10 @@ function CollabFo() {
 
   const handleObjectiveChange = (priorityName, objectiveIndex, field, value, columnIndex = null) => {
     setTemplate((prevTemplate) => {
-      const updatedPriorities = prevTemplate.templateStrategicPriorities.map((priority) => {
-        if (priority.name !== priorityName) return priority;
+      const currentPriorities = prevTemplate?.templateStrategicPriorities || [];
+      
+      const updatedPriorities = currentPriorities.map((priority) => {
+        if (!priority || priority.name !== priorityName) return priority;
 
         const updatedObjectives = [...(priority.objectives || [])];
 
@@ -336,16 +346,43 @@ function CollabFo() {
   };
 
   useEffect(() => {
-    fetchCadreTemplateId();
-    checkOngoingEvaluation();
-    checkIfValidated();
+    const initData = async () => {
+      setIsLoading(true);
+      try {
+        await Promise.all([
+          fetchCadreTemplateId(),
+          checkOngoingEvaluation(),
+          checkIfValidated()
+        ]);
+        
+        // Récupérer la période actuelle et l'année
+        const periodResponse = await formulaireInstance.get('/Periode/periodeActel', { 
+          params: { type: 'Cadre' } 
+        });
+        if (periodResponse.data?.length > 0) {
+          setCurrentPeriod(periodResponse.data[0].currentPeriod);
+          setEvaluationYear(periodResponse.data[0].year || new Date().getFullYear().toString());
+        }
+      } catch (error) {
+        console.error('Erreur lors de l\'initialisation des données:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    initData();
   }, []);
 
   useEffect(() => {
-    fetchTemplate();
+    if (templateId) {
+      fetchTemplate();
+    }
   }, [templateId]);
 
   const validateStep = () => {
+    if (!template || !template.templateStrategicPriorities || !Array.isArray(template.templateStrategicPriorities)) {
+      return false;
+    }
+    
     const currentPriority = template.templateStrategicPriorities[activeStep];
     if (!currentPriority) return false;
 
@@ -365,11 +402,15 @@ function CollabFo() {
       return false;
     }
 
-    for (const [index, objective] of (currentPriority.objectives || []).entries()) {
+    const currentObjectives = currentPriority.objectives || [];
+    for (let index = 0; index < currentObjectives.length; index++) {
+      const objective = currentObjectives[index];
+      if (!objective) continue;
+
       const isObjectivePartiallyFilled = objective.description || objective.weighting || objective.resultIndicator;
 
       const hasDynamicColumns = Array.isArray(objective.dynamicColumns);
-      const isAnyDynamicColumnFilled = hasDynamicColumns ? objective.dynamicColumns.some((column) => column.value) : false;
+      const isAnyDynamicColumnFilled = hasDynamicColumns ? objective.dynamicColumns.some((column) => column?.value) : false;
 
       if (isAnyDynamicColumnFilled && (!objective.description || !objective.weighting || !objective.resultIndicator)) {
         setErrorMessage(
@@ -407,11 +448,15 @@ function CollabFo() {
     return true;
   };
 
-  const steps = template.templateStrategicPriorities.map((priority) => priority.name);
+  const steps = template?.templateStrategicPriorities?.map((priority) => priority?.name || '') || [];
 
   const validateUserObjectives = async () => {
     try {
-      for (const priority of template.templateStrategicPriorities) {
+      const priorities = template?.templateStrategicPriorities || [];
+      
+      for (const priority of priorities) {
+        if (!priority) continue;
+        
         const totalWeighting = calculateTotalWeighting(priority);
         if (totalWeighting > 100) {
           setErrorMessage(`La somme des pondérations pour "${priority.name}" ne peut pas dépasser 100%. Actuel: ${totalWeighting}%`);
@@ -420,8 +465,10 @@ function CollabFo() {
         }
       }
       
-      for (let i = 0; i < template.templateStrategicPriorities.length; i++) {
-        const priority = template.templateStrategicPriorities[i];
+      for (let i = 0; i < priorities.length; i++) {
+        const priority = priorities[i];
+        if (!priority) continue;
+        
         const priorityTotal = calculateTotalWeighting(priority);
         const required = getRequiredPercentage(priority);
         if (priorityTotal <= required) {
@@ -438,8 +485,10 @@ function CollabFo() {
         return;
       }
 
-      const objectivesData = template.templateStrategicPriorities.flatMap((priority) =>
-        priority.objectives.map((objective) => ({
+      const objectivesData = priorities.flatMap((priority) => {
+        if (!priority || !priority.objectives) return [];
+        
+        return priority.objectives.map((objective) => ({
           priorityId: priority.templatePriorityId,
           priorityName: priority.name,
           description: objective.description || '',
@@ -452,7 +501,7 @@ function CollabFo() {
               value: col.value
             })) || []
         }))
-      );
+      });
 
       if (!objectivesData.some((obj) => obj.description && obj.weighting && obj.resultIndicator)) {
         setErrorMessage('Veuillez remplir au moins un objectif avec tous les champs requis.');
@@ -489,7 +538,11 @@ function CollabFo() {
 
   const updateUserObjectives = async () => {
     try {
-      for (const priority of template.templateStrategicPriorities) {
+      const priorities = template?.templateStrategicPriorities || [];
+      
+      for (const priority of priorities) {
+        if (!priority) continue;
+        
         const totalWeighting = calculateTotalWeighting(priority);
         if (totalWeighting > 100) {
           setErrorMessage(`La somme des pondérations pour "${priority.name}" ne peut pas dépasser 100%. Actuel: ${totalWeighting}%`);
@@ -498,8 +551,10 @@ function CollabFo() {
         }
       }
       
-      for (let i = 0; i < template.templateStrategicPriorities.length; i++) {
-        const priority = template.templateStrategicPriorities[i];
+      for (let i = 0; i < priorities.length; i++) {
+        const priority = priorities[i];
+        if (!priority) continue;
+        
         const priorityTotal = calculateTotalWeighting(priority);
         const required = getRequiredPercentage(priority);
         if (priorityTotal <= required) {
@@ -516,8 +571,10 @@ function CollabFo() {
         return;
       }
 
-      const objectivesData = template.templateStrategicPriorities.flatMap((priority) =>
-        priority.objectives.map((objective) => ({
+      const objectivesData = priorities.flatMap((priority) => {
+        if (!priority || !priority.objectives) return [];
+        
+        return priority.objectives.map((objective) => ({
           objectiveId: objective.objectiveId,
           description: objective.description || '',
           weighting: parseFloat(objective.weighting) || 0,
@@ -534,7 +591,7 @@ function CollabFo() {
               value: col.value
             })) || []
         }))
-      );
+      });
 
       const response = await formulaireInstance.put('/Evaluation/userObjectif', objectivesData, {
         params: {
@@ -561,6 +618,31 @@ function CollabFo() {
   const handleBack = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
+
+  if (isLoading) {
+    return (
+      <Container
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '80vh',
+          gap: 2
+        }}
+      >
+        <Box sx={{ width: '100%', maxWidth: 400 }}>
+          <Typography variant="h6" align="center" gutterBottom>
+            Chargement des données...
+          </Typography>
+          <LinearProgress />
+          <Typography variant="body2" align="center" sx={{ mt: 2, color: 'text.secondary' }}>
+            Récupération des informations de l'évaluation
+          </Typography>
+        </Box>
+      </Container>
+    );
+  }
 
   if (!hasOngoingEvaluation) {
     return (
@@ -634,19 +716,37 @@ function CollabFo() {
     );
   }
 
+  if (!template || !template.templateStrategicPriorities) {
+    return (
+      <Container>
+        <Typography>Données du template non disponibles</Typography>
+      </Container>
+    );
+  }
+
   return (
     <>
-      <Paper sx={{ position: 'relative' }}>
-        <MainCard sx={{ position: 'sticky', top: 0, zIndex: 100, backgroundColor: 'background.paper' }}>
+      <Paper>
+        <MainCard sx={{ mb: 2 }}>
           <Grid container alignItems="center" justifyContent="space-between">
             <Grid item xs={12} md={8}>
-              {/* MODIFICATION ICI: Changement du titre */}
               <Typography variant="h3">
-                Fixation Objectif - {evaluationYear}
+                {/* TITRE DYNAMIQUE MODIFIÉ */}
+                {currentPeriod === 'Mi-Parcours' && !isValidated 
+                  ? `Fixation Objectif - ${evaluationYear}` 
+                  : `${currentPeriod} - ${evaluationYear}`
+                }
               </Typography>
+              {/* SOUS-TITRE EXPLICATIF */}
+              {currentPeriod === 'Mi-Parcours' && !isValidated && (
+                <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 0.5 }}>
+                  Période de Mi-Parcours - Validation des objectifs en cours
+                </Typography>
+              )}
             </Grid>
             <Grid item sx={{ display: 'flex', gap: 1 }}>
-              {currentPeriod === 'Fixation Objectif' && (
+              {/* HISTORIQUE POUR FIXATION OBJECTIF ET MI-PARCOURS NON VALIDÉ */}
+              {(currentPeriod === 'Fixation Objectif' || (currentPeriod === 'Mi-Parcours' && !isValidated)) && (
                 <Tooltip title="Historique de validation" arrow>
                   <IconButton aria-label="historique" onClick={handleOpenHistoryModal}>
                     <HistoryIcon sx={{ fontSize: 20, color: 'black' }} />
@@ -662,20 +762,23 @@ function CollabFo() {
           </Grid>
         </MainCard>
 
-        {currentPeriod === 'Fixation Objectif' && (
-          <Box sx={{ p: 1, position: 'relative' }}>
+        {/* FORMULAIRE DE FIXATION D'OBJECTIFS */}
+        {(currentPeriod === 'Fixation Objectif' || (currentPeriod === 'Mi-Parcours' && !isValidated)) && (
+          <Box sx={{ p: 1 }}>
             <Stepper activeStep={activeStep} alternativeLabel sx={{ 
               fontSize: '0.75rem', 
-              mb: 0.5,
+              mb: 2,
               '& .MuiStepLabel-root': { fontSize: '0.75rem' },
               '& .MuiStep-root': { minHeight: 'auto' },
               height: 'auto'
             }}>
               {steps.map((label, index) => {
                 const priority = template.templateStrategicPriorities[index];
+                if (!priority) return null;
+                
                 const total = calculateTotalWeighting(priority).toFixed(1);
                 return (
-                  <Step key={label}>
+                  <Step key={label || index}>
                     <StepLabel>
                       <Box sx={{ textAlign: 'center' }}>
                         <Typography variant="caption" sx={{ fontSize: '0.7rem', display: 'block' }}>{label}</Typography>
@@ -691,7 +794,7 @@ function CollabFo() {
               variant="body1" 
               sx={{ 
                 textAlign: 'center', 
-                mt: 1, 
+                mb: 2, 
                 fontWeight: 'bold',
                 color: calculateOverallTotal() > 100 ? 'error.main' : calculateOverallTotal() < 100 ? 'warning.main' : 'success.main'
               }}
@@ -707,40 +810,40 @@ function CollabFo() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -50 }}
                   transition={{ duration: 0.5 }}
-                  style={{ marginTop: '0' }}
                 >
-                  <Card>
-                    <CardContent sx={{ p: 1 }}>
+                  <Card sx={{ mb: 2 }}>
+                    <CardContent sx={{ p: 2 }}>
                       <Typography
                         variant="h5"
                         gutterBottom
                         sx={{
-                          marginBottom: '5px',
+                          marginBottom: 2,
                           backgroundColor: '#fafafa',
-                          padding: 1,
+                          padding: 2,
                           display: 'flex',
                           justifyContent: 'space-between',
-                          alignItems: 'center'
+                          alignItems: 'center',
+                          borderRadius: 1
                         }}
                       >
                         <Box>
-                          {template.templateStrategicPriorities[activeStep].name} - Requis : {getRequiredPercentage(template.templateStrategicPriorities[activeStep])}%
+                          {template.templateStrategicPriorities[activeStep]?.name || 'Priorité'} - Requis : {getRequiredPercentage(template.templateStrategicPriorities[activeStep])}%
                         </Box>
                         <IconTargetArrow style={{ color: '#3F51B5' }} />
                       </Typography>
 
-                      <Grid container spacing={1}>
-                        {Array.from({ length: template.templateStrategicPriorities[activeStep].maxObjectives }).map((_, objIndex) => {
-                          const objective = template.templateStrategicPriorities[activeStep].objectives[objIndex] || {};
+                      <Grid container spacing={2}>
+                        {Array.from({ length: template.templateStrategicPriorities[activeStep]?.maxObjectives || 0 }).map((_, objIndex) => {
+                          const objective = template.templateStrategicPriorities[activeStep]?.objectives?.[objIndex] || {};
 
                           return (
                             <Grid item xs={12} key={objIndex}>
-                              <Paper sx={{ p: 1, backgroundColor: '#e8eaf6' }}>
-                                <Typography variant="h6" sx={{ mb: '5px' }} gutterBottom>
+                              <Paper sx={{ p: 2, backgroundColor: '#e8eaf6', borderRadius: 2 }}>
+                                <Typography variant="h6" sx={{ mb: 2 }} gutterBottom>
                                   Objectif {objIndex + 1}
                                 </Typography>
-                                <Grid container spacing={1}>
-                                  <Grid item xs={12} sm={12}>
+                                <Grid container spacing={2}>
+                                  <Grid item xs={12}>
                                     <TextField
                                       label={
                                         <span>
@@ -750,11 +853,11 @@ function CollabFo() {
                                       fullWidth
                                       variant="outlined"
                                       multiline
-                                      minRows={2}
+                                      minRows={3}
                                       value={objective.description || ''}
                                       onChange={(e) =>
                                         handleObjectiveChange(
-                                          template.templateStrategicPriorities[activeStep].name,
+                                          template.templateStrategicPriorities[activeStep]?.name || '',
                                           objIndex,
                                           'description',
                                           e.target.value
@@ -775,7 +878,7 @@ function CollabFo() {
                                       value={objective.weighting || ''}
                                       onChange={(e) =>
                                         handleObjectiveChange(
-                                          template.templateStrategicPriorities[activeStep].name,
+                                          template.templateStrategicPriorities[activeStep]?.name || '',
                                           objIndex,
                                           'weighting',
                                           e.target.value
@@ -784,7 +887,7 @@ function CollabFo() {
                                       error={parseFloat(objective.weighting) > 100}
                                       helperText={parseFloat(objective.weighting) > 100 ? 'Maximum 100%' : ''}
                                       InputProps={{
-                endAdornment: <InputAdornment position="end">%</InputAdornment>
+                                        endAdornment: <InputAdornment position="end">%</InputAdornment>
                                       }}
                                     />
                                   </Grid>
@@ -799,11 +902,11 @@ function CollabFo() {
                                       fullWidth
                                       variant="outlined"
                                       multiline
-                                      minRows={2}
+                                      minRows={3}
                                       value={objective.resultIndicator || ''}
                                       onChange={(e) =>
                                         handleObjectiveChange(
-                                          template.templateStrategicPriorities[activeStep].name,
+                                          template.templateStrategicPriorities[activeStep]?.name || '',
                                           objIndex,
                                           'resultIndicator',
                                           e.target.value
@@ -815,19 +918,19 @@ function CollabFo() {
                                   {Array.isArray(objective.dynamicColumns) &&
                                     objective.dynamicColumns.map((column, colIndex) => (
                                       <Grid item xs={12} key={colIndex}>
-                                        <Box sx={{ mb: 0.5 }}>
-                                          <Typography variant="subtitle3" gutterBottom>
-                                            {column.columnName || `Colonne ${colIndex + 1}`}
+                                        <Box sx={{ mb: 1 }}>
+                                          <Typography variant="subtitle1" gutterBottom fontWeight="medium">
+                                            {column?.columnName || `Colonne ${colIndex + 1}`}
                                           </Typography>
                                           <TextField
                                             fullWidth
                                             variant="outlined"
                                             multiline
                                             minRows={2}
-                                            value={column.value || ''}
+                                            value={column?.value || ''}
                                             onChange={(e) =>
                                               handleObjectiveChange(
-                                                template.templateStrategicPriorities[activeStep].name,
+                                                template.templateStrategicPriorities[activeStep]?.name || '',
                                                 objIndex,
                                                 'dynamicColumns',
                                                 e.target.value,
@@ -850,20 +953,21 @@ function CollabFo() {
               </AnimatePresence>
             )}
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
               <Button
                 disabled={activeStep === 0}
                 onClick={handleBack}
                 variant="contained"
                 color="primary"
                 startIcon={<KeyboardArrowLeft />}
+                sx={{ minWidth: 120 }}
               >
                 Précédent
               </Button>
 
               {activeStep === steps.length - 1 ? (
                 isValidated ? (
-                  <Button variant="contained" color="secondary" disabled>
+                  <Button variant="contained" color="secondary" disabled sx={{ minWidth: 120 }}>
                     Déjà validé
                   </Button>
                 ) : userObjectives && userObjectives.length > 0 ? (
@@ -876,6 +980,7 @@ function CollabFo() {
                       }
                     }}
                     disabled={template.templateStrategicPriorities.some((p) => calculateTotalWeighting(p) > 100)}
+                    sx={{ minWidth: 120 }}
                   >
                     Mettre à jour
                   </Button>
@@ -889,6 +994,7 @@ function CollabFo() {
                       }
                     }}
                     disabled={template.templateStrategicPriorities.some((p) => calculateTotalWeighting(p) > 100)}
+                    sx={{ minWidth: 120 }}
                   >
                     Valider
                   </Button>
@@ -904,6 +1010,7 @@ function CollabFo() {
                   }}
                   endIcon={<KeyboardArrowRight />}
                   disabled={calculateTotalWeighting(template.templateStrategicPriorities[activeStep]) > 100}
+                  sx={{ minWidth: 120 }}
                 >
                   Suivant
                 </Button>
@@ -913,14 +1020,19 @@ function CollabFo() {
             <Dialog open={openHelpModal} onClose={handleCloseHelpModal} aria-labelledby="help-dialog-title">
               <DialogTitle id="help-dialog-title">Aide</DialogTitle>
               <DialogContent dividers>
-                {currentPeriod === 'Fixation Objectif' && (
+                {currentPeriod === 'Fixation Objectif' || (currentPeriod === 'Mi-Parcours' && !isValidated) ? (
                   <>
                     <Typography variant="h6" gutterBottom>
-                      Pendant cette période
+                      {currentPeriod === 'Mi-Parcours' && !isValidated 
+                        ? 'Fixation des objectifs - Période de Mi-Parcours' 
+                        : 'Fixation des objectifs'
+                      }
                     </Typography>
                     <Typography variant="body1" gutterBottom>
-                      Vous devez compléter, pour chaque Priorité Stratégique, au moins un objectif, sa pondération et le résultat attendu.
-                      Suivez les étapes ci-dessous pour y parvenir :
+                      {currentPeriod === 'Mi-Parcours' && !isValidated 
+                        ? 'Vous êtes actuellement en période de Mi-Parcours mais n\'avez pas encore validé vos objectifs. Vous devez d\'abord compléter et valider vos objectifs avant de pouvoir saisir vos résultats mi-parcours.'
+                        : 'Vous devez compléter, pour chaque Priorité Stratégique, au moins un objectif, sa pondération et le résultat attendu.'
+                      }
                     </Typography>
                     <Box component="ol" sx={{ pl: 3, mt: 2 }}>
                       <Typography component="li" variant="body2" gutterBottom>
@@ -936,19 +1048,17 @@ function CollabFo() {
                     </Typography>
                     <Typography variant="body2" sx={{ mt: 1 }} color="textSecondary">
                       Vous pouvez modifier les champs remplis à tout moment{' '}
-                      <span style={{ color: 'red' }}>tant que l'évaluateur n’a pas encore validé à son tour.</span>
+                      <span style={{ color: 'red' }}>tant que l'évaluateur n'a pas encore validé à son tour.</span>
                     </Typography>
                     <Typography variant="body1" sx={{ mt: 2 }}>
-                      <strong>Important :</strong> Une fois que l’évaluateur aura validé, le bouton de validation sera désactivé, et aucune
+                      <strong>Important :</strong> Une fois que l'évaluateur aura validé, le bouton de validation sera désactivé, et aucune
                       modification ne sera possible, sauf par votre évaluateur.
                     </Typography>
                   </>
-                )}
-
-                {currentPeriod === 'Mi-Parcours' && (
+                ) : currentPeriod === 'Mi-Parcours' && isValidated ? (
                   <>
                     <Typography variant="h6" gutterBottom>
-                      Pendant cette période
+                      Mi-Parcours
                     </Typography>
                     <Box component="ol" sx={{ pl: 3, mt: 2 }}>
                       <Typography component="li" variant="body2" gutterBottom>
@@ -960,15 +1070,13 @@ function CollabFo() {
                     </Box>
                     <Typography variant="body1" sx={{ mt: 2 }}>
                       <strong>Important :</strong> Une fois que vous avez validé, votre évaluateur ne pourra plus apporter de modifications,
-                      sauf sur les résultats durant la période d’évaluation finale.
+                      sauf sur les résultats durant la période d'évaluation finale.
                     </Typography>
                   </>
-                )}
-
-                {currentPeriod === 'Évaluation Finale' && (
+                ) : currentPeriod === 'Évaluation Finale' ? (
                   <>
                     <Typography variant="h6" gutterBottom>
-                      Pendant cette période
+                      Évaluation Finale
                     </Typography>
                     <Box component="ol" sx={{ pl: 3, mt: 2 }}>
                       <Typography component="li" variant="body2" gutterBottom>
@@ -982,9 +1090,7 @@ function CollabFo() {
                       <strong>Important :</strong> Une fois que vous avez validé, votre évaluateur ne pourra plus apporter de modifications.
                     </Typography>
                   </>
-                )}
-
-                {!['Fixation Objectif', 'Mi-Parcours', 'Évaluation Finale'].includes(currentPeriod) && (
+                ) : (
                   <Typography variant="body1" gutterBottom>
                     Voici quelques informations pour vous aider à utiliser cette section :
                   </Typography>
@@ -1071,15 +1177,17 @@ function CollabFo() {
           </Box>
         )}
 
+        {/* MI-PARCOURS - DÉJÀ VALIDÉ */}
+        {currentPeriod === 'Mi-Parcours' && isValidated && <CollabMp />}
+
+        {/* ÉVALUATION FINALE */}
+        {currentPeriod === 'Évaluation Finale' && <CollabFi />}
+
         <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={handleCloseSnackbar}>
           <Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: '100%' }}>
             {errorMessage}
           </Alert>
         </Snackbar>
-
-        {currentPeriod === 'Mi-Parcours' && <CollabMp />}
-
-        {currentPeriod === 'Évaluation Finale' && <CollabFi />}
       </Paper>
     </>
   );

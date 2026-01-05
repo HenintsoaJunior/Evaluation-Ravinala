@@ -62,6 +62,7 @@ function ManagerFo() {
   const [enrichedValidationHistory, setEnrichedValidationHistory] = useState([]);
   const [openHelpModal, setOpenHelpModal] = useState(false);
   const [openHistoryModal, setOpenHistoryModal] = useState(false);
+  const [openConfirmModal, setOpenConfirmModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [subordinate, setSubordinate] = useState({});
@@ -80,6 +81,14 @@ function ManagerFo() {
 
   const handleCloseHistoryModal = () => {
     setOpenHistoryModal(false);
+  };
+
+  const handleOpenConfirmModal = () => {
+    setOpenConfirmModal(true);
+  };
+
+  const handleCloseConfirmModal = () => {
+    setOpenConfirmModal(false);
   };
 
   const handleCloseSnackbar = () => {
@@ -124,13 +133,6 @@ function ManagerFo() {
     try {
       const response = await formulaireInstance.get(`/Template/${templateId}`);
       setTemplate(response.data.template || { templateStrategicPriorities: [] });
-
-      const periodResponse = await formulaireInstance.get('/Periode/periodeActel', { params: { type: 'Cadre' } });
-      if (periodResponse.data?.length > 0) {
-        setCurrentPeriod(periodResponse.data[0].currentPeriod);
-        // Assuming the API response includes a 'year' field; fallback to current year if not
-        setEvaluationYear(periodResponse.data[0].year || new Date().getFullYear().toString());
-      }
     } catch (error) {
       console.error('Erreur lors de la récupération du Template:', error);
       setErrorMessage('Erreur lors de la récupération du modèle de formulaire.');
@@ -276,12 +278,10 @@ function ManagerFo() {
         params: { userId: subordinateId, type: typeUser }
       });
       if (response.data && response.data.historyCFos && response.data.historyCFos.length > 0) {
-        // Use a Set-like approach (Map) to deduplicate by validatedBy (unique validators only)
         const uniqueValidatorMap = new Map();
-        const history = response.data.historyCFos.filter(entry => entry.validatedBy !== null); // Only validated entries
+        const history = response.data.historyCFos.filter(entry => entry.validatedBy !== null);
         history.forEach((entry) => {
           if (!uniqueValidatorMap.has(entry.validatedBy)) {
-            // Take the latest entry for this validator
             uniqueValidatorMap.set(entry.validatedBy, entry);
           } else {
             const existing = uniqueValidatorMap.get(entry.validatedBy);
@@ -306,11 +306,10 @@ function ManagerFo() {
               ...entry,
               user: userInfo,
               formattedDate,
-              status: 'Validé' // Add status since validatedBy is not null
+              status: 'Validé'
             };
           })
         );
-        // Sort by date descending (latest first)
         const sortedEnriched = enriched.sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
         setEnrichedValidationHistory(sortedEnriched);
         setIsValidated(uniqueHistory.length > 0);
@@ -324,7 +323,6 @@ function ManagerFo() {
       setValidationHistory([]);
       setEnrichedValidationHistory([]);
       if (error.response?.status === 404) {
-        // Endpoint might not exist or no data, treat as not validated
         setValidationHistory([]);
         setEnrichedValidationHistory([]);
         setIsValidated(false);
@@ -336,14 +334,37 @@ function ManagerFo() {
   };
 
   useEffect(() => {
-    fetchCadreTemplateId();
-    checkOngoingEvaluation();
-    checkIfValidated();
-    fetchSubordinate();
+    const initData = async () => {
+      setIsLoading(true);
+      try {
+        await Promise.all([
+          fetchCadreTemplateId(),
+          checkOngoingEvaluation(),
+          checkIfValidated(),
+          fetchSubordinate()
+        ]);
+        
+        // Récupérer la période actuelle et l'année
+        const periodResponse = await formulaireInstance.get('/Periode/periodeActel', { 
+          params: { type: 'Cadre' } 
+        });
+        if (periodResponse.data?.length > 0) {
+          setCurrentPeriod(periodResponse.data[0].currentPeriod);
+          setEvaluationYear(periodResponse.data[0].year || new Date().getFullYear().toString());
+        }
+      } catch (error) {
+        console.error('Erreur lors de l\'initialisation des données:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    initData();
   }, [subordinateId]);
 
   useEffect(() => {
-    fetchTemplate();
+    if (templateId) {
+      fetchTemplate();
+    }
   }, [templateId]);
 
   const calculateTotalWeighting = (priority) => {
@@ -370,7 +391,6 @@ function ManagerFo() {
       return false;
     }
 
-    // Vérification du minimum pour la priorité actuelle uniquement
     const required = getRequiredPercentage(currentPriority);
     if (totalWeighting <= required) {
       setErrorMessage(`La pondération pour "${currentPriority.name}" doit être supérieure à ${required}%. Actuel: ${totalWeighting.toFixed(1)}%`);
@@ -410,7 +430,6 @@ function ManagerFo() {
       return false;
     }
 
-    // Vérification du total global
     const overallTotal = calculateOverallTotal();
     if (overallTotal > 100) {
       setErrorMessage(`Le total global des pondérations ne peut pas dépasser 100%. Actuel: ${overallTotal.toFixed(1)}%`);
@@ -425,7 +444,6 @@ function ManagerFo() {
 
   const validateHistoryUserObjectives = async () => {
     try {
-      // Validate total weightings for all priorities
       for (const priority of template.templateStrategicPriorities) {
         const totalWeighting = calculateTotalWeighting(priority);
         if (totalWeighting > 100) {
@@ -435,7 +453,6 @@ function ManagerFo() {
         }
       }
 
-      // Vérification des minima pour toutes les priorités
       for (let i = 0; i < template.templateStrategicPriorities.length; i++) {
         const priority = template.templateStrategicPriorities[i];
         const priorityTotal = calculateTotalWeighting(priority);
@@ -447,18 +464,12 @@ function ManagerFo() {
         }
       }
 
-      // Vérification du total global
       const overallTotal = calculateOverallTotal();
       if (overallTotal > 100) {
         setErrorMessage(`Le total global des pondérations ne peut pas dépasser 100%. Actuel: ${overallTotal.toFixed(1)}%`);
         setOpenSnackbar(true);
         return;
       }
-      // if (overallTotal < 100) {
-      //   setErrorMessage(`Attention : Le total global des pondérations est inférieur à 100%. Actuel: ${overallTotal.toFixed(1)}%`);
-      //   setOpenSnackbar(true);
-      //   // Ne pas bloquer la validation : continuer vers la validation
-      // }
 
       let objectivesData = template.templateStrategicPriorities.flatMap((priority) =>
         (priority.objectives || []).map((objective) => ({
@@ -476,7 +487,6 @@ function ManagerFo() {
         }))
       );
 
-      // Filter out completely empty objectives
       objectivesData = objectivesData.filter(obj => obj.description.trim() || obj.weighting > 0 || obj.objectiveId !== null);
 
       if (!objectivesData.some((obj) => obj.description && obj.weighting && obj.resultIndicator)) {
@@ -485,14 +495,12 @@ function ManagerFo() {
         return;
       }
 
-      // Debug: Log payload (remove in production)
       console.log('Payload for validateUserObjectivesHistory:', objectivesData);
 
       const response = await formulaireInstance.post('/Evaluation/validateUserObjectivesHistory', objectivesData, {
         params: { validatorUserId: managerId, userId: subordinateId, type: typeUser }
       });
 
-      // Add audit logging
       await AuditService.logAction(
         managerId,
         `Validation des objectifs pour l'évaluation avec evalId: ${evalId} du collaborateur ${subordinateId}`,
@@ -506,7 +514,6 @@ function ManagerFo() {
       window.location.reload();
     } catch (error) {
       console.error('Erreur lors de la validation des objectifs :', error);
-      // Handle specific validation error
       if (error.response?.status === 400 && error.response?.data?.errors) {
         const errors = Object.values(error.response.data.errors).flat().join(', ');
         setErrorMessage(`Erreur de validation: ${errors}`);
@@ -515,6 +522,17 @@ function ManagerFo() {
       }
       setOpenSnackbar(true);
     }
+  };
+
+  const handleConfirmValidation = () => {
+    if (validateStep()) {
+      handleOpenConfirmModal();
+    }
+  };
+
+  const handleFinalValidation = () => {
+    handleCloseConfirmModal();
+    validateHistoryUserObjectives();
   };
 
   const handleNext = () => {
@@ -526,6 +544,31 @@ function ManagerFo() {
   const handleBack = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
+
+  if (isLoading) {
+    return (
+      <Container
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '80vh',
+          gap: 2
+        }}
+      >
+        <Box sx={{ width: '100%', maxWidth: 400 }}>
+          <Typography variant="h6" align="center" gutterBottom>
+            Chargement des données...
+          </Typography>
+          <LinearProgress />
+          <Typography variant="body2" align="center" sx={{ mt: 2, color: 'text.secondary' }}>
+            Récupération des informations de l'évaluation et du collaborateur
+          </Typography>
+        </Box>
+      </Container>
+    );
+  }
 
   if (!hasOngoingEvaluation) {
     return (
@@ -601,13 +644,23 @@ function ManagerFo() {
 
   return (
     <>
-      <Paper sx={{ position: 'relative' }}>
-        <MainCard sx={{ position: 'sticky', top: 0, zIndex: 100, backgroundColor: 'background.paper' }}>
+      <Paper>
+        <MainCard sx={{ mb: 2 }}>
           <Grid container alignItems="center" justifyContent="space-between">
             <Grid item xs={12} md={8}>
               <Typography variant="h3">
-                <span>{currentPeriod} - {evaluationYear}</span>
+                {/* TITRE DYNAMIQUE MODIFIÉ */}
+                {currentPeriod === 'Mi-Parcours' && !isValidated 
+                  ? `Fixation Objectif - ${evaluationYear}` 
+                  : `${currentPeriod} - ${evaluationYear}`
+                }
               </Typography>
+              {/* SOUS-TITRE EXPLICATIF */}
+              {currentPeriod === 'Mi-Parcours' && !isValidated && (
+                <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 0.5 }}>
+                  Période de Mi-Parcours - Validation des objectifs en cours
+                </Typography>
+              )}
               <Grid container spacing={2} sx={{ mt: 1 }} alignItems="center">
                 <Grid item xs={12}>
                   <Box sx={{ p: 1, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
@@ -625,7 +678,8 @@ function ManagerFo() {
               </Grid>
             </Grid>
             <Grid item sx={{ display: 'flex', gap: 1 }}>
-              {currentPeriod === 'Fixation Objectif' && (
+              {/* HISTORIQUE POUR FIXATION OBJECTIF ET MI-PARCOURS NON VALIDÉ */}
+              {(currentPeriod === 'Fixation Objectif' || (currentPeriod === 'Mi-Parcours' && !isValidated)) && (
                 <Tooltip title="Historique de validation" arrow>
                   <IconButton aria-label="historique" onClick={handleOpenHistoryModal}>
                     <HistoryIcon sx={{ fontSize: 20, color: 'black' }} />
@@ -641,11 +695,12 @@ function ManagerFo() {
           </Grid>
         </MainCard>
 
-        {currentPeriod === 'Fixation Objectif' && (
-          <Box sx={{ p: 1, position: 'relative' }}>
+        {/* FORMULAIRE DE FIXATION D'OBJECTIFS */}
+        {(currentPeriod === 'Fixation Objectif' || (currentPeriod === 'Mi-Parcours' && !isValidated)) && (
+          <Box sx={{ p: 1 }}>
             <Stepper activeStep={activeStep} alternativeLabel sx={{ 
               fontSize: '0.75rem', 
-              mb: 0.5,
+              mb: 2,
               '& .MuiStepLabel-root': { fontSize: '0.75rem' },
               '& .MuiStep-root': { minHeight: 'auto' },
               height: 'auto'
@@ -666,12 +721,11 @@ function ManagerFo() {
               })}
             </Stepper>
 
-            {/* Affichage du total global des pondérations */}
             <Typography 
               variant="body1" 
               sx={{ 
                 textAlign: 'center', 
-                mt: 1, 
+                mb: 2, 
                 fontWeight: 'bold',
                 color: calculateOverallTotal() > 100 ? 'error.main' : calculateOverallTotal() < 100 ? 'warning.main' : 'success.main'
               }}
@@ -687,20 +741,20 @@ function ManagerFo() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -50 }}
                   transition={{ duration: 0.5 }}
-                  style={{ marginTop: '0' }}
                 >
-                  <Card>
-                    <CardContent sx={{ p: 1 }}>
+                  <Card sx={{ mb: 2 }}>
+                    <CardContent sx={{ p: 2 }}>
                       <Typography
                         variant="h5"
                         gutterBottom
                         sx={{
-                          marginBottom: '5px',
+                          marginBottom: 2,
                           backgroundColor: '#fafafa',
-                          padding: 1,
+                          padding: 2,
                           display: 'flex',
                           justifyContent: 'space-between',
-                          alignItems: 'center'
+                          alignItems: 'center',
+                          borderRadius: 1
                         }}
                       >
                         <Box>
@@ -709,18 +763,18 @@ function ManagerFo() {
                         <IconTargetArrow style={{ color: '#3F51B5' }} />
                       </Typography>
 
-                      <Grid container spacing={1}>
+                      <Grid container spacing={2}>
                         {Array.from({ length: template.templateStrategicPriorities[activeStep].maxObjectives }).map((_, objIndex) => {
                           const objective = template.templateStrategicPriorities[activeStep].objectives[objIndex] || {};
 
                           return (
                             <Grid item xs={12} key={objIndex}>
-                              <Paper sx={{ p: 1, backgroundColor: '#e8eaf6' }}>
-                                <Typography variant="h6" sx={{ mb: '5px' }} gutterBottom>
+                              <Paper sx={{ p: 2, backgroundColor: '#e8eaf6', borderRadius: 2 }}>
+                                <Typography variant="h6" sx={{ mb: 2 }} gutterBottom>
                                   Objectif {objIndex + 1}
                                 </Typography>
-                                <Grid container spacing={1}>
-                                  <Grid item xs={12} sm={12}>
+                                <Grid container spacing={2}>
+                                  <Grid item xs={12}>
                                     <TextField
                                       label={
                                         <span>
@@ -730,7 +784,7 @@ function ManagerFo() {
                                       fullWidth
                                       variant="outlined"
                                       multiline
-                                      minRows={2}
+                                      minRows={3}
                                       value={objective.description || ''}
                                       onChange={(e) =>
                                         handleObjectiveChange(
@@ -779,7 +833,7 @@ function ManagerFo() {
                                       fullWidth
                                       variant="outlined"
                                       multiline
-                                      minRows={2}
+                                      minRows={3}
                                       value={objective.resultIndicator || ''}
                                       onChange={(e) =>
                                         handleObjectiveChange(
@@ -795,8 +849,8 @@ function ManagerFo() {
                                   {Array.isArray(objective.dynamicColumns) &&
                                     objective.dynamicColumns.map((column, colIndex) => (
                                       <Grid item xs={12} key={colIndex}>
-                                        <Box sx={{ mb: 0.5 }}>
-                                          <Typography variant="subtitle3" gutterBottom>
+                                        <Box sx={{ mb: 1 }}>
+                                          <Typography variant="subtitle1" gutterBottom fontWeight="medium">
                                             {column.columnName || `Colonne ${colIndex + 1}`}
                                           </Typography>
                                           <TextField
@@ -830,32 +884,30 @@ function ManagerFo() {
               </AnimatePresence>
             )}
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
               <Button
                 disabled={activeStep === 0}
                 onClick={handleBack}
                 variant="contained"
                 color="primary"
                 startIcon={<KeyboardArrowLeft />}
+                sx={{ minWidth: 120 }}
               >
                 Précédent
               </Button>
 
               {activeStep === steps.length - 1 ? (
                 isValidated ? (
-                  <Button variant="contained" color="secondary" disabled>
+                  <Button variant="contained" color="secondary" disabled sx={{ minWidth: 120 }}>
                     Déjà validé
                   </Button>
                 ) : (
                   <Button
                     variant="contained"
                     color="success"
-                    onClick={() => {
-                      if (validateStep()) {
-                        validateHistoryUserObjectives();
-                      }
-                    }}
+                    onClick={handleConfirmValidation}
                     disabled={template.templateStrategicPriorities.some((p) => calculateTotalWeighting(p) > 100)}
+                    sx={{ minWidth: 120 }}
                   >
                     Valider
                   </Button>
@@ -871,22 +923,71 @@ function ManagerFo() {
                   }}
                   endIcon={<KeyboardArrowRight />}
                   disabled={calculateTotalWeighting(template.templateStrategicPriorities[activeStep]) > 100}
+                  sx={{ minWidth: 120 }}
                 >
                   Suivant
                 </Button>
               )}
             </Box>
 
-            <Dialog open={openHelpModal} onClose={handleCloseHelpModal} aria-labelledby="help-dialog-title">
+            <Dialog open={openConfirmModal} onClose={handleCloseConfirmModal} aria-labelledby="confirm-dialog-title">
+              <DialogTitle id="confirm-dialog-title">Confirmation de validation</DialogTitle>
+              <DialogContent dividers>
+                <Typography variant="body1" gutterBottom>
+                  Êtes-vous sûr de vouloir valider les objectifs ?
+                </Typography>
+                <Typography variant="body2" color="textSecondary" gutterBottom>
+                  Cette action est irréversible. Une fois validés :
+                </Typography>
+                <Box component="ul" sx={{ pl: 2, mt: 1 }}>
+                  <Typography component="li" variant="body2" color="textSecondary">
+                    Vous ne pourrez plus modifier les objectifs, pondérations ou indicateurs de résultat
+                  </Typography>
+                  <Typography component="li" variant="body2" color="textSecondary">
+                    Le collaborateur ne pourra plus modifier ses objectifs
+                  </Typography>
+                  <Typography component="li" variant="body2" color="textSecondary">
+                    La validation sera enregistrée dans l'historique
+                  </Typography>
+                </Box>
+                <Box sx={{ mt: 2, p: 1.5, backgroundColor: '#fff8e1', borderRadius: 1, border: '1px solid #ffd54f' }}>
+                  <Typography variant="body2" color="textSecondary">
+                    <strong>Collaborateur :</strong> {subordinate.name || 'N/A'} ({subordinate.matricule || 'N/A'})
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5 }}>
+                    <strong>Période :</strong> {currentPeriod === 'Mi-Parcours' && !isValidated ? 'Fixation Objectif (Mi-Parcours)' : currentPeriod} - {evaluationYear}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5 }}>
+                    <strong>Total pondération :</strong> {calculateOverallTotal().toFixed(1)}%
+                  </Typography>
+                </Box>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={handleCloseConfirmModal} color="primary">
+                  Annuler
+                </Button>
+                <Button onClick={handleFinalValidation} color="success" variant="contained" autoFocus>
+                  Confirmer la validation
+                </Button>
+              </DialogActions>
+            </Dialog>
+
+            <Dialog open={openHelpModal} onClose={handleCloseHelpModal} aria-labelledby="help-dialog-title" maxWidth="md">
               <DialogTitle id="help-dialog-title">Aide</DialogTitle>
               <DialogContent dividers>
-                {currentPeriod === 'Fixation Objectif' && (
+                {currentPeriod === 'Fixation Objectif' || (currentPeriod === 'Mi-Parcours' && !isValidated) ? (
                   <>
                     <Typography variant="h6" gutterBottom>
-                      Pendant cette période
+                      {currentPeriod === 'Mi-Parcours' && !isValidated 
+                        ? 'Validation des objectifs - Période de Mi-Parcours' 
+                        : 'Validation des objectifs'
+                      }
                     </Typography>
                     <Typography variant="body1" gutterBottom>
-                      Vous devez valider les objectifs, les pondérations et les résultats attendus saisis par l'évalué. Vous pouvez également les modifier ou en ajouter de nouveaux si nécessaire.
+                      {currentPeriod === 'Mi-Parcours' && !isValidated 
+                        ? 'Le collaborateur est actuellement en période de Mi-Parcours mais n\'a pas encore validé ses objectifs. Vous devez d\'abord valider ses objectifs avant qu\'il puisse saisir ses résultats mi-parcours.'
+                        : 'Vous devez valider les objectifs, les pondérations et les résultats attendus saisis par l\'évalué. Vous pouvez également les modifier ou en ajouter de nouveaux si nécessaire.'
+                      }
                     </Typography>
                     <Typography variant="body1" sx={{ mt: 3 }} gutterBottom>
                       Suivez les étapes ci-dessous :
@@ -909,12 +1010,10 @@ function ManagerFo() {
                       Note : Une fois validés, vous ne pourrez plus apporter de modifications avant la période d'évaluation de mi-parcours.
                     </Typography>
                   </>
-                )}
-
-                {currentPeriod === 'Mi-Parcours' && (
+                ) : currentPeriod === 'Mi-Parcours' && isValidated ? (
                   <>
                     <Typography variant="h6" gutterBottom>
-                      Pendant cette période
+                      Mi-Parcours
                     </Typography>
                     <Typography variant="body1" sx={{ mt: 3 }} gutterBottom>
                       Suivez les étapes :
@@ -935,34 +1034,30 @@ function ManagerFo() {
                     </Box>
                     <Typography variant="body1" sx={{ mt: 3 }} gutterBottom>
                       Note: Vous pouvez toujours modifier les champs remplis
-                      <span style={{ color: 'red' }}> tant que l'évalué ne l’a pas encore validé à son tour.</span>
+                      <span style={{ color: 'red' }}> tant que l'évalué ne l'a pas encore validé à son tour.</span>
                     </Typography>
                     <Typography variant="body1" sx={{ mt: 2 }}>
                       <strong>Important :</strong> Une fois que l'évalué a validé, le bouton de validation sera désactivé. Seuls les résultats
-                      pourront être modifiés lors de la période d’évaluation finale.
+                      pourront être modifiés lors de la période d'évaluation finale.
                     </Typography>
                   </>
-                )}
-
-                {currentPeriod === 'Évaluation Finale' && (
+                ) : currentPeriod === 'Évaluation Finale' ? (
                   <>
                     <Typography variant="h6" gutterBottom>
-                      Pendant cette période
+                      Évaluation Finale
                     </Typography>
                     <Typography variant="body1" gutterBottom>
                       Revoyez les résultats pour chaque résultat attendu que vous avez renseigné.
                     </Typography>
                     <Typography variant="body1" sx={{ mt: 3 }} gutterBottom>
                       Note: Vous pouvez toujours modifier uniquement les résultats
-                      <span style={{ color: 'red' }}> tant que l'évalué ne l’a pas encore validé à son tour.</span>
+                      <span style={{ color: 'red' }}> tant que l'évalué ne l'a pas encore validé à son tour.</span>
                     </Typography>
                     <Typography variant="body1" sx={{ mt: 2 }}>
                       <strong>Important :</strong> Une fois que l'évalué a validé, le bouton de validation sera désactivé.
                     </Typography>
                   </>
-                )}
-
-                {!['Fixation Objectif', 'Mi-Parcours', 'Évaluation Finale'].includes(currentPeriod) && (
+                ) : (
                   <Typography variant="body1" gutterBottom>
                     Voici quelques informations pour vous aider à utiliser cette section :
                   </Typography>
@@ -1048,14 +1143,17 @@ function ManagerFo() {
           </Box>
         )}
 
+        {/* MI-PARCOURS - DÉJÀ VALIDÉ */}
+        {currentPeriod === 'Mi-Parcours' && isValidated && <ManagerMp subordinateId={subordinateId} typeUser={typeUser} />}
+
+        {/* ÉVALUATION FINALE */}
+        {currentPeriod === 'Évaluation Finale' && <ManagerFi subordinateId={subordinateId} typeUser={typeUser} />}
+
         <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={handleCloseSnackbar}>
           <Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: '100%' }}>
             {errorMessage}
           </Alert>
         </Snackbar>
-
-        {currentPeriod === 'Mi-Parcours' && <ManagerMp subordinateId={subordinateId} typeUser={typeUser} />}
-        {currentPeriod === 'Évaluation Finale' && <ManagerFi subordinateId={subordinateId} typeUser={typeUser} />}
       </Paper>
     </>
   );

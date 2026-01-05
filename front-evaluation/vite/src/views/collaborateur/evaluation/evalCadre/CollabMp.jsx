@@ -22,10 +22,8 @@ import {
   InputAdornment
 } from '@mui/material';
 import { IconTargetArrow, IconEdit, IconCheck, IconX } from '@tabler/icons-react';
-import { useNavigate } from 'react-router-dom';
 
 function CollabMp() {
-  const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user'));
   const userId = user.id;
   const typeUser = user.typeUser;
@@ -44,7 +42,6 @@ function CollabMp() {
   const [openValidationConfirmModal, setOpenValidationConfirmModal] = useState(false);
   const [isManagerValidation, setIsManagerValidation] = useState(false);
 
-  // Fetch fonctions...
   const fetchCadreTemplateId = async () => {
     try {
       const response = await formulaireInstance.get('/Template/CadreTemplate');
@@ -59,9 +56,17 @@ function CollabMp() {
       const response = await formulaireInstance.get('/Periode/enCours', {
         params: { type: 'Cadre' }
       });
-      setHasOngoingEvaluation(response.data.length > 0);
-      const evaluationId = response.data[0].evalId;
-      setEvalId(evaluationId);
+      const hasEvaluation = response.data.length > 0;
+      setHasOngoingEvaluation(hasEvaluation);
+      if (hasEvaluation) {
+        setEvalId(response.data[0].evalId);
+        const periodResponse = await formulaireInstance.get('/Periode/periodeActel', { 
+          params: { type: 'Cadre' } 
+        });
+        if (periodResponse.data?.length > 0) {
+          setCurrentPeriod(periodResponse.data[0].currentPeriod);
+        }
+      }
     } catch (error) {
       console.error('Erreur lors de la vérification des évaluations:', error);
     }
@@ -73,11 +78,6 @@ function CollabMp() {
     try {
       const response = await formulaireInstance.get(`/Template/${templateId}`);
       setTemplate(response.data.template || { templateStrategicPriorities: [] });
-
-      const periodResponse = await formulaireInstance.get('/Periode/periodeActel', { params: { type: 'Cadre' } });
-      if (periodResponse.data?.length > 0) {
-        setCurrentPeriod(periodResponse.data[0].currentPeriod);
-      }
     } catch (error) {
       console.error('Erreur lors de la récupération du Template:', error);
     }
@@ -98,7 +98,6 @@ function CollabMp() {
     }
   };
 
-  // Fonction pour rafraîchir les objectifs
   const refreshUserObjectives = async () => {
     if (evalId && userId) {
       try {
@@ -147,7 +146,6 @@ function CollabMp() {
     }
   };
 
-  // Fonction pour vérifier si le manager a validé
   const checkManagerValidationStatus = async () => {
     try {
       const response = await formulaireInstance.get('/Evaluation/getHistoryMidtermeByUser', {
@@ -205,39 +203,38 @@ function CollabMp() {
 
   const handleSaveResults = async () => {
     try {
-      // Déterminer si c'est une évaluation Cadre ou NonCadre
-      const isCadreEvaluation = typeUser === "Cadre" || typeUser === "cadre";
-      
-      // Préparer la requête selon le type d'évaluation
-      let requestData;
-      
-      if (isCadreEvaluation) {
-        // Format pour les cadres
-        requestData = {
-          userId: userId,
-          type: "Cadre",
-          objectives: userObjectives.map(obj => ({
+      const requestData = {
+        userId: userId,
+        type: "Cadre",
+        objectives: userObjectives.map(obj => {
+          const resultValue = editedResults[obj.objectiveId];
+          let parsedResult = 0;
+          
+          if (resultValue !== '' && resultValue !== null && resultValue !== undefined) {
+            const normalizedValue = resultValue.toString().replace(',', '.');
+            parsedResult = parseFloat(normalizedValue) || 0;
+          }
+          
+          return {
             objectiveId: obj.objectiveId,
             description: obj.description || '',
-            weighting: obj.weighting || 0,
+            weighting: parseFloat(obj.weighting) || 0,
             resultIndicator: obj.resultIndicator || '',
-            result: editedResults[obj.objectiveId] === '' ? 0 : parseFloat(editedResults[obj.objectiveId]) || obj.result,
-            dynamicColumns: obj.objectiveColumnValues?.map(col => ({
+            result: parsedResult,
+            ColumnValues: obj.objectiveColumnValues?.map(col => ({
+              columnName: col.columnName,
+              value: col.value || ''
+            })) || [],
+            DynamicColumns: obj.objectiveColumnValues?.map(col => ({
               columnName: col.columnName,
               value: col.value || ''
             })) || []
-          })),
-          indicators: [] // Champ requis mais vide pour les cadres
-        };
-      } else {
-        // Format pour les non-cadres (si jamais vous avez besoin de cette fonctionnalité)
-        requestData = {
-          userId: userId,
-          type: "NonCadre",
-          objectives: [], // Champ requis mais vide pour les non-cadres
-          indicators: [] // Vous devrez remplir ceci si vous gérez les non-cadres
-        };
-      }
+          };
+        }),
+        indicators: []
+      };
+
+      console.log('Envoi de la requête updateResults:', JSON.stringify(requestData, null, 2));
 
       const response = await formulaireInstance.post('/Evaluation/updateResults', requestData);
 
@@ -245,12 +242,10 @@ function CollabMp() {
         const message = response.data?.Message || 'Résultats mis à jour avec succès !';
         alert(message);
         
-        // Rafraîchir les données depuis l'API pour s'assurer que tout est synchronisé
         await refreshUserObjectives();
         
         setIsEditing(false);
         setOpenConfirmModal(false);
-        
       } else {
         alert('Réponse inattendue du serveur.');
       }
@@ -258,13 +253,11 @@ function CollabMp() {
     } catch (error) {
       console.error('Erreur détaillée:', error);
       
-      // Gestion améliorée des erreurs
       if (error.response) {
         const { status, data } = error.response;
         
         if (status === 400) {
           if (data.errors) {
-            // Erreurs de validation ASP.NET
             const validationErrors = Object.entries(data.errors)
               .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
               .join('\n');
@@ -288,22 +281,17 @@ function CollabMp() {
   };
 
   const handleConfirmSave = () => {
-    // Valider que tous les résultats sont des nombres valides ou vides
     const invalidEntries = Object.entries(editedResults).filter(([id, value]) => {
       if (value === '' || value === null || value === undefined) {
-        return false; // Vide est acceptable
+        return false;
       }
       
-      // Remplacer les virgules par des points
       const normalizedValue = value.toString().replace(',', '.');
-      
-      // Vérifier le format numérique
       const numValue = parseFloat(normalizedValue);
       if (isNaN(numValue)) {
         return true;
       }
       
-      // Vérifier la plage
       return numValue < 0 || numValue > 100;
     });
 
@@ -337,15 +325,24 @@ function CollabMp() {
   };
 
   useEffect(() => {
-    fetchCadreTemplateId();
-    checkOngoingEvaluation();
-    checkIfValidated();
-    checkManagerValidationStatus();
+    const initData = async () => {
+      await fetchCadreTemplateId();
+      await checkOngoingEvaluation();
+      await checkIfValidated();
+      await checkManagerValidationStatus();
+    };
+    initData();
   }, []);
 
   useEffect(() => {
     fetchTemplate();
   }, [templateId]);
+
+  useEffect(() => {
+    if (currentPeriod && currentPeriod !== 'Mi-Parcours') {
+      console.warn(`ATTENTION : La période actuelle est "${currentPeriod}" mais nous attendons "Mi-Parcours"`);
+    }
+  }, [currentPeriod]);
 
   const validateMitermObjectifHistory = async () => {
     if (isValidated) {
@@ -353,7 +350,6 @@ function CollabMp() {
       return;
     }
 
-    // Vérifier si des résultats sont manquants
     const missingResults = userObjectives.filter(obj => 
       !obj.result && obj.result !== 0
     );
@@ -363,7 +359,6 @@ function CollabMp() {
       return;
     }
 
-    // Vérifier si tous les résultats sont dans la plage 0-100
     const invalidResults = userObjectives.filter(obj => {
       const result = parseFloat(obj.result);
       return isNaN(result) || result < 0 || result > 100;
@@ -425,21 +420,13 @@ function CollabMp() {
     );
   };
 
-  const isResultDefined = (result) => {
-    return result !== undefined && result !== null && result !== '';
-  };
-
-  // Fonction pour formater la valeur d'entrée
   const formatInputValue = (value) => {
     if (value === '' || value === null || value === undefined) return '';
     
     const strValue = value.toString();
-    // Remplacer la virgule par un point pour le parsing
     const normalized = strValue.replace(',', '.');
     
-    // Vérifier si c'est un nombre
     if (/^-?\d*\.?\d*$/.test(normalized)) {
-      // Limiter à 2 décimales
       const parts = normalized.split('.');
       if (parts[1] && parts[1].length > 2) {
         return parts[0] + '.' + parts[1].substring(0, 2);
@@ -457,13 +444,12 @@ function CollabMp() {
           inputProps={{ 
             style: { 
               textAlign: 'center',
-              padding: '8px'
+              padding: '4px'
             }
           }}
           value={formatInputValue(editedResults[objective.objectiveId] || '')}
           onChange={(e) => {
             let value = e.target.value;
-            // Permettre les nombres, points et virgules
             if (value === '' || /^[\d,.]*$/.test(value)) {
               handleResultChange(objective.objectiveId, value);
             }
@@ -475,13 +461,9 @@ function CollabMp() {
               return;
             }
             
-            // Remplacer la virgule par un point
             value = value.replace(',', '.');
-            
-            // Vérifier si c'est un nombre valide
             const numValue = parseFloat(value);
             if (!isNaN(numValue)) {
-              // Limiter à la plage 0-100 et 2 décimales
               const clampedValue = Math.min(100, Math.max(0, numValue));
               const formattedValue = clampedValue.toFixed(2);
               handleResultChange(objective.objectiveId, formattedValue);
@@ -490,9 +472,9 @@ function CollabMp() {
           variant="outlined"
           size="small"
           sx={{
-            width: '100px',
+            width: '80px',
             '& .MuiOutlinedInput-root': {
-              height: '40px'
+              height: '32px'
             }
           }}
           InputProps={{
@@ -512,15 +494,15 @@ function CollabMp() {
           sx={{
             backgroundColor: hasResult ? (isHigh ? '#E8EAF6' : 'rgba(244, 67, 54, 0.1)') : '#f5f5f5',
             color: hasResult ? (isHigh ? 'primary.main' : 'error.main') : 'text.secondary',
-            padding: '8px 16px',
-            borderRadius: '8px',
+            padding: '4px 8px',
+            borderRadius: '4px',
             textAlign: 'center',
             display: 'inline-block',
-            minWidth: '80px',
+            minWidth: '60px',
             border: hasResult ? 'none' : '1px dashed #ccc'
           }}
         >
-          <Typography>
+          <Typography variant="body2">
             {hasResult ? `${resultValue} %` : 'Non saisi'}
           </Typography>
         </Box>
@@ -530,22 +512,29 @@ function CollabMp() {
 
   return (
     <>
-      <Box p={3}>
+      <Box p={2}>
+        {currentPeriod && currentPeriod !== 'Mi-Parcours' && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            <strong>Attention :</strong> La période actuelle est <strong>{currentPeriod}</strong> mais ce composant est conçu pour la période "Mi-Parcours".
+            {currentPeriod === 'Fixation Objectif' && ' Vous devez d\'abord valider vos objectifs dans la période de fixation.'}
+          </Alert>
+        )}
+
         {noObjectivesFound ? (
-          <Alert severity="info" sx={{ mb: 3 }}>
+          <Alert severity="info" sx={{ mb: 2 }}>
             Vous n'avez pas encore validé vos objectifs
           </Alert>
         ) : (
           <>
-            {/* Afficher le bouton "Modifier mes résultats" seulement si l'utilisateur n'a pas encore validé ET si le manager n'a pas validé */}
             {!isValidated && !isManagerValidation && (
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3, gap: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2, gap: 1 }}>
                 {!isEditing ? (
                   <Button
                     variant="outlined"
                     color="primary"
                     startIcon={<IconEdit />}
                     onClick={handleStartEditing}
+                    size="small"
                   >
                     Modifier mes résultats
                   </Button>
@@ -556,6 +545,7 @@ function CollabMp() {
                       color="error"
                       startIcon={<IconX />}
                       onClick={handleCancelEditing}
+                      size="small"
                     >
                       Annuler
                     </Button>
@@ -564,8 +554,9 @@ function CollabMp() {
                       color="success"
                       startIcon={<IconCheck />}
                       onClick={handleConfirmSave}
+                      size="small"
                     >
-                      Enregistrer les résultats
+                      Enregistrer
                     </Button>
                   </>
                 )}
@@ -573,203 +564,204 @@ function CollabMp() {
             )}
 
             {isManagerValidation && (
-              <Alert severity="info" sx={{ mb: 3 }}>
+              <Alert severity="info" sx={{ mb: 2 }}>
                 Votre manager a déjà validé vos résultats. Vous pouvez seulement les visualiser.
               </Alert>
             )}
 
             {template.templateStrategicPriorities.map((priority, priorityIndex) => (
-              <Card key={priorityIndex} sx={{ mb: 4 }}>
-                <CardContent>
+              <Card key={priorityIndex} sx={{ mb: 2, boxShadow: 1 }}>
+                <CardContent sx={{ p: 1 }}>
                   <Typography
-                    variant="h5"
+                    variant="h6"
                     gutterBottom
                     sx={{
-                      marginBottom: '20px',
+                      mb: 1,
                       backgroundColor: '#e8eaf6',
-                      padding: 3,
+                      padding: 1,
                       display: 'flex',
                       justifyContent: 'space-between',
-                      alignItems: 'center'
+                      alignItems: 'center',
+                      borderRadius: 0.5
                     }}
                   >
                     {priority.name}
-                    <IconTargetArrow style={{ color: '#3f51b5' }} />
+                    <IconTargetArrow style={{ color: '#3f51b5', fontSize: '20px' }} />
                   </Typography>
 
-                  <Grid container spacing={3}>
-                    <Grid item xs={12}>
-                      <TableContainer component="div">
-                        <Table aria-label={`tableau pour ${priority.name}`} sx={{ border: '1px solid #e0e0e0', borderRadius: '4px' }}>
-                          <TableHead>
-                            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                  <TableContainer sx={{ maxHeight: 400, overflow: 'auto' }}>
+                    <Table size="small" sx={{ border: '1px solid #e0e0e0' }}>
+                      <TableHead>
+                        <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                          <TableCell
+                            sx={{
+                              fontWeight: 'bold',
+                              fontSize: '0.75rem',
+                              py: 0.5,
+                              borderRight: '1px solid rgba(224, 224, 224, 1)',
+                              width: '25%'
+                            }}
+                          >
+                            Objectif
+                          </TableCell>
+                          <TableCell
+                            sx={{
+                              fontWeight: 'bold',
+                              fontSize: '0.75rem',
+                              py: 0.5,
+                              borderRight: '1px solid rgba(224, 224, 224, 1)',
+                              width: '10%'
+                            }}
+                          >
+                            Pondération
+                          </TableCell>
+                          <TableCell
+                            sx={{
+                              fontWeight: 'bold',
+                              fontSize: '0.75rem',
+                              py: 0.5,
+                              borderRight: '1px solid rgba(224, 224, 224, 1)',
+                              width: '25%'
+                            }}
+                          >
+                            Indicateur de Résultat
+                          </TableCell>
+                          <TableCell
+                            sx={{
+                              fontWeight: 'bold',
+                              fontSize: '0.75rem',
+                              py: 0.5,
+                              borderRight: '1px solid rgba(224, 224, 224, 1)',
+                              width: '15%'
+                            }}
+                          >
+                            Résultat
+                            {isEditing && (
+                              <Typography variant="caption" color="text.secondary" display="block">
+                                (0-100)
+                              </Typography>
+                            )}
+                          </TableCell>
+                          {priority.objectives[0]?.dynamicColumns?.map((column, colIndex) => (
+                            <TableCell
+                              key={colIndex}
+                              sx={{
+                                fontWeight: 'bold',
+                                fontSize: '0.75rem',
+                                py: 0.5,
+                                width: '10%'
+                              }}
+                            >
+                              {column.columnName || `Colonne ${colIndex + 1}`}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      </TableHead>
+
+                      <TableBody>
+                        {priority.objectives
+                          .filter((objective) => !isObjectiveUndefined(objective))
+                          .map((objective, objIndex) => (
+                            <TableRow key={objIndex} hover>
                               <TableCell
                                 sx={{
-                                  fontWeight: 'bold',
-                                  color: '#333333',
-                                  textAlign: 'left',
                                   borderRight: '1px solid rgba(224, 224, 224, 1)',
+                                  py: 0.5,
                                   width: '25%'
                                 }}
                               >
-                                Objectif
+                                <Typography variant="body2">
+                                  {objective.description || 'Non défini'}
+                                </Typography>
                               </TableCell>
                               <TableCell
                                 sx={{
-                                  fontWeight: 'bold',
-                                  color: '#333333',
-                                  textAlign: 'left',
                                   borderRight: '1px solid rgba(224, 224, 224, 1)',
+                                  py: 0.5,
                                   width: '10%'
                                 }}
                               >
-                                Pondération
+                                <Box
+                                  sx={{
+                                    color: objective.weighting >= 50 ? 'primary.main' : 'error.main',
+                                    padding: '2px 8px',
+                                    borderRadius: '4px',
+                                    textAlign: 'center',
+                                    display: 'inline-block'
+                                  }}
+                                >
+                                  <Typography variant="body2">
+                                    {(objective.weighting !== undefined && objective.weighting !== null && objective.weighting !== '') 
+                                      ? `${objective.weighting} %` 
+                                      : '0 %'}
+                                  </Typography>
+                                </Box>
                               </TableCell>
                               <TableCell
                                 sx={{
-                                  fontWeight: 'bold',
-                                  color: '#333333',
-                                  textAlign: 'left',
                                   borderRight: '1px solid rgba(224, 224, 224, 1)',
+                                  py: 0.5,
                                   width: '25%'
                                 }}
                               >
-                                Indicateur de Résultat
+                                <Typography variant="body2">
+                                  {objective.resultIndicator ? objective.resultIndicator : 'Non défini'}
+                                </Typography>
                               </TableCell>
                               <TableCell
                                 sx={{
-                                  fontWeight: 'bold',
-                                  color: '#333333',
-                                  textAlign: 'left',
                                   borderRight: '1px solid rgba(224, 224, 224, 1)',
+                                  py: 0.5,
                                   width: '15%'
                                 }}
                               >
-                                Résultat
-                                {isEditing && (
-                                  <Typography variant="caption" color="text.secondary" display="block">
-                                    (0-100)
-                                  </Typography>
-                                )}
+                                {renderResultCell(objective)}
                               </TableCell>
-                              {priority.objectives[0]?.dynamicColumns?.map((column, colIndex) => (
+                              {objective.dynamicColumns?.map((column, colIndex) => (
                                 <TableCell
                                   key={colIndex}
                                   sx={{
-                                    fontWeight: 'bold',
-                                    color: '#333333',
-                                    textAlign: 'left',
+                                    py: 0.5,
                                     width: '10%'
                                   }}
                                 >
-                                  {column.columnName || `Colonne ${colIndex + 1}`}
+                                  <Typography variant="body2">
+                                    {column.value ? column.value : ''}
+                                  </Typography>
                                 </TableCell>
                               ))}
                             </TableRow>
-                          </TableHead>
-
-                          <TableBody>
-                            {priority.objectives
-                              .filter((objective) => !isObjectiveUndefined(objective))
-                              .map((objective, objIndex) => (
-                                <TableRow key={objIndex}>
-                                  <TableCell
-                                    sx={{
-                                      borderRight: '1px solid rgba(224, 224, 224, 1)',
-                                      width: '25%'
-                                    }}
-                                  >
-                                    {objective.description || 'Non défini'}
-                                  </TableCell>
-                                  <TableCell
-                                    sx={{
-                                      borderRight: '1px solid rgba(224, 224, 224, 1)',
-                                      width: '10%'
-                                    }}
-                                  >
-                                    <Box
-                                      sx={{
-                                        color: objective.weighting >= 50 ? 'primary.main' : 'error.main',
-                                        padding: '8px 16px',
-                                        borderRadius: '8px',
-                                        textAlign: 'center'
-                                      }}
-                                    >
-                                      <Typography>
-                                        {(objective.weighting !== undefined && objective.weighting !== null && objective.weighting !== '') 
-                                          ? `${objective.weighting} %` 
-                                          : '0 %'}
-                                      </Typography>
-                                    </Box>
-                                  </TableCell>
-                                  <TableCell
-                                    sx={{
-                                      borderRight: '1px solid rgba(224, 224, 224, 1)',
-                                      width: '25%'
-                                    }}
-                                  >
-                                    {objective.resultIndicator ? objective.resultIndicator : 'Non défini'}
-                                  </TableCell>
-                                  <TableCell
-                                    sx={{
-                                      borderRight: '1px solid rgba(224, 224, 224, 1)',
-                                      width: '15%'
-                                    }}
-                                  >
-                                    {renderResultCell(objective)}
-                                  </TableCell>
-                                  {objective.dynamicColumns?.map((column, colIndex) => (
-                                    <TableCell
-                                      key={colIndex}
-                                      sx={{
-                                        width: '10%'
-                                      }}
-                                    >
-                                      {column.value ? column.value : ''}
-                                    </TableCell>
-                                  ))}
-                                </TableRow>
-                              ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    </Grid>
-                  </Grid>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
                 </CardContent>
               </Card>
             ))}
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 4, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
-              <Typography variant="body1" color="text.secondary">
-                {isValidated 
-                  ? 'Vous avez déjà validé vos objectifs et résultats' 
-                  : 'Après avoir ajouté tous vos résultats, validez'}
-              </Typography>
-              
-              <Button
-                variant="contained"
-                color="success"
-                disabled={isValidated || isManagerValidation}
-                onClick={() => setOpenValidationConfirmModal(true)}
-                size="large"
-              >
-                {isValidated ? 'Déjà validé' : 'Valider'}
-              </Button>
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              mt: 2, 
+              p: 1, 
+              backgroundColor: '#f5f5f5', 
+              borderRadius: 0.5 
+            }}>
             </Box>
 
-            {/* Modal de confirmation pour l'enregistrement des résultats */}
-            <Dialog open={openConfirmModal} onClose={() => setOpenConfirmModal(false)}>
+            <Dialog open={openConfirmModal} onClose={() => setOpenConfirmModal(false)} maxWidth="xs">
               <DialogTitle>Confirmer l'enregistrement</DialogTitle>
               <DialogContent>
-                <Typography>
+                <Typography variant="body2">
                   Êtes-vous sûr de vouloir enregistrer ces résultats ?
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                   Vous pourrez toujours les modifier avant la validation définitive.
                 </Typography>
               </DialogContent>
               <DialogActions>
-                <Button onClick={() => setOpenConfirmModal(false)}>Annuler</Button>
+                <Button onClick={() => setOpenConfirmModal(false)} size="small">Annuler</Button>
                 <Button 
                   onClick={() => {
                     setOpenConfirmModal(false);
@@ -777,31 +769,30 @@ function CollabMp() {
                   }} 
                   variant="contained" 
                   color="primary"
+                  size="small"
                 >
                   Confirmer
                 </Button>
               </DialogActions>
             </Dialog>
 
-            {/* Modal de confirmation pour la validation définitive */}
-            <Dialog open={openValidationConfirmModal} onClose={() => setOpenValidationConfirmModal(false)}>
+            <Dialog open={openValidationConfirmModal} onClose={() => setOpenValidationConfirmModal(false)} maxWidth="xs">
               <DialogTitle>Confirmer la validation</DialogTitle>
               <DialogContent>
-                <Typography variant="body1" gutterBottom>
+                <Typography variant="body2" gutterBottom>
                   Êtes-vous sûr de vouloir valider vos objectifs et résultats ?
                 </Typography>
-                <Alert severity="warning" sx={{ mt: 2 }}>
+                <Alert severity="warning" sx={{ mt: 1, py: 0.5 }}>
                   <Typography variant="body2">
                     <strong>Attention :</strong> Après validation, vous ne pourrez plus modifier vos résultats.
-                    Seul votre manager pourra apporter des modifications si nécessaire.
                   </Typography>
                 </Alert>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                   Cette action est irréversible pour la période d'évaluation en cours.
                 </Typography>
               </DialogContent>
               <DialogActions>
-                <Button onClick={() => setOpenValidationConfirmModal(false)}>Annuler</Button>
+                <Button onClick={() => setOpenValidationConfirmModal(false)} size="small">Annuler</Button>
                 <Button 
                   onClick={() => {
                     setOpenValidationConfirmModal(false);
@@ -809,6 +800,7 @@ function CollabMp() {
                   }} 
                   variant="contained" 
                   color="success"
+                  size="small"
                 >
                   Confirmer la validation
                 </Button>
